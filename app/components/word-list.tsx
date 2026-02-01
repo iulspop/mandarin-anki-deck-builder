@@ -148,11 +148,12 @@ function ShareLinkButton({ onShareList }: { onShareList: () => Promise<boolean> 
   );
 }
 
-export function WordList({ words, prefs = {}, onToggle, onShareList }: {
+export function WordList({ words, prefs = {}, onToggle, onShareList, importButton }: {
   words: WordWithTracking[];
   prefs?: WordListPrefs;
   onToggle: (wordId: string) => void;
   onShareList?: () => Promise<boolean>;
+  importButton?: React.ReactNode;
 }) {
   const [sorting, setSorting] = useState<SortingState>(
     prefs.sorting ?? [{ id: "frequency", desc: false }],
@@ -424,6 +425,7 @@ export function WordList({ words, prefs = {}, onToggle, onShareList }: {
           </Popover.Positioner>
         </Popover.Portal>
       </Popover.Root>
+      {importButton}
       {onShareList && (
         <ShareLinkButton onShareList={onShareList} />
       )}

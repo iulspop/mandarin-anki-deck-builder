@@ -1,10 +1,11 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useLoaderData, Link, useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/words";
-import { getWords, getWordIndex, addCustomWord, type HskVersion } from "~/lib/words.server";
+import { getWords, getWordIndex, addCustomWord, addCustomWords, type HskVersion } from "~/lib/words.server";
 import { WordList, type WordListPrefs } from "~/components/word-list";
 import { FrequencyCoverage } from "~/components/frequency-coverage";
 import { AddWordDialog } from "~/components/add-word-dialog";
+import { ImportCSVDialog } from "~/components/import-csv-dialog";
 import { useTrackedWords } from "~/hooks/use-tracked-words";
 import { computeFrequencyStats, computeCoverageCurve } from "~/lib/stats";
 import { Toast } from "~/components/toast";
@@ -45,6 +46,22 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     return addCustomWord(simplified, pinyin, meaning);
+  }
+
+  if (intent === "import-csv") {
+    const wordsJson = formData.get("words") as string;
+    if (!wordsJson) {
+      return { ok: false, error: "No words provided" };
+    }
+    try {
+      const words = JSON.parse(wordsJson) as { simplified: string; pinyin: string; meaning: string }[];
+      if (!Array.isArray(words) || words.length === 0) {
+        return { ok: false, error: "No valid words found" };
+      }
+      return addCustomWords(words);
+    } catch {
+      return { ok: false, error: "Invalid word data" };
+    }
   }
 
   return { ok: false, error: "Unknown action" };
@@ -274,6 +291,15 @@ export default function WordsRoute() {
     }
   };
 
+  const handleCSVImported = useCallback((ids: string[], added: number) => {
+    trackAll(ids);
+    const tracked = ids.length;
+    setShareToast({
+      type: "success",
+      message: `${added} word${added !== 1 ? "s" : ""} added, ${tracked} word${tracked !== 1 ? "s" : ""} tracked`,
+    });
+  }, [trackAll]);
+
   const handleVersionToggle = () => {
     const newVersion = version === "3.0" ? "2.0" : "3.0";
     document.cookie = `hsk-version=${newVersion};path=/;max-age=31536000;SameSite=Lax`;
@@ -356,6 +382,7 @@ export default function WordsRoute() {
         prefs={wordListPrefs}
         onToggle={toggleWord}
         onShareList={handleCopyShareLink}
+        importButton={<ImportCSVDialog onImported={handleCSVImported} />}
       />
 
       {shareToast && (

@@ -92,6 +92,28 @@ export function addCustomWord(simplified: string, pinyin: string, meaning: strin
   return { ok: true };
 }
 
+export function addCustomWords(
+  words: { simplified: string; pinyin: string; meaning: string }[],
+): { ok: true; ids: string[]; added: number } {
+  const database = getDb();
+  const insert = database.prepare(
+    `INSERT OR IGNORE INTO words (simplified, pinyin, meaning, source)
+     VALUES (?, ?, ?, 'custom')`,
+  );
+
+  let added = 0;
+  const tx = database.transaction(() => {
+    for (const w of words) {
+      const result = insert.run(w.simplified, w.pinyin, w.meaning);
+      if (result.changes > 0) added++;
+    }
+  });
+  tx();
+
+  clearCache();
+  return { ok: true, ids: words.map((w) => w.simplified), added };
+}
+
 let cachedIndex: Record<string, WordIndexEntry> | null = null;
 
 export function clearWordIndexCache() {
