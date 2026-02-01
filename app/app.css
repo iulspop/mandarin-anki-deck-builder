@@ -1548,6 +1548,28 @@ body {
   cursor: not-allowed;
 }
 
+.regenerate-btn {
+  background: none;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.regenerate-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.regenerate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .generate-missing-btn {
   background: #0369a1;
   color: #fff;
@@ -1708,4 +1730,12 @@ body {
   text-align: center;
   padding: 0.4rem;
   margin: 0;
+}
+
+/* Generate confirmation */
+.generate-confirm-message {
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.5;
+  margin: 0 0 1rem;
 }

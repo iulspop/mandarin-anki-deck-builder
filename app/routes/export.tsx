@@ -6,6 +6,7 @@ import { useTrackedWords } from "~/hooks/use-tracked-words";
 import { useGenerateCards } from "~/hooks/use-generate-cards";
 import { Toast, type ToastData } from "~/components/toast";
 import { Checkbox } from "@base-ui/react/checkbox";
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import type { WordWithTracking, WordIndexEntry, HskWordWithDeck } from "~/lib/types";
 
 function AudioButton({ src }: { src: string }) {
@@ -351,6 +352,14 @@ export default function ExportRoute() {
     await generate(missingCards.map((w) => ({ simplified: w.character, pinyin: w.pinyin, meaning: w.meaning })));
   }, [missingCards, generate]);
 
+  const [regenConfirmOpen, setRegenConfirmOpen] = useState(false);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!currentWord) return;
+    setRegenConfirmOpen(false);
+    await generate([{ simplified: currentWord.character, pinyin: currentWord.pinyin, meaning: currentWord.meaning }]);
+  }, [currentWord, generate]);
+
   const [toast, setToast] = useState<ToastData | null>(null);
   const [enabledTemplates, setEnabledTemplates] = useState<
     Record<string, boolean>
@@ -458,6 +467,16 @@ export default function ExportRoute() {
                   Generate "{currentWord.character}"
                 </button>
               )}
+              {currentWord && currentWordIndex && !isGenerating && (
+                <button
+                  type="button"
+                  className="regenerate-btn"
+                  onClick={() => setRegenConfirmOpen(true)}
+                  disabled={isGenerating}
+                >
+                  Regenerate "{currentWord.character}"
+                </button>
+              )}
               {missingCards.length > 0 && (
                 <button
                   type="button"
@@ -524,6 +543,24 @@ export default function ExportRoute() {
           </div>
         </>
       )}
+
+      <AlertDialog.Root open={regenConfirmOpen} onOpenChange={setRegenConfirmOpen}>
+        <AlertDialog.Portal>
+          <AlertDialog.Backdrop className="dialog-backdrop" />
+          <AlertDialog.Popup className="dialog-popup">
+            <AlertDialog.Title className="dialog-title">Regenerate Card Data</AlertDialog.Title>
+            <p className="generate-confirm-message">
+              Regenerate card data for &ldquo;{currentWord?.character}&rdquo;? This will overwrite the existing sentence, audio, and image with new AI-generated content.
+            </p>
+            <div className="add-word-actions">
+              <AlertDialog.Close className="add-word-cancel">Cancel</AlertDialog.Close>
+              <button type="button" className="add-word-submit" onClick={handleRegenerate}>
+                Regenerate
+              </button>
+            </div>
+          </AlertDialog.Popup>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
 
       {toast && <Toast {...toast} onDismiss={() => setToast(null)} />}
       {isGenerating && genProgress && (
