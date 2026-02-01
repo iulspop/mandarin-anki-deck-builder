@@ -103,5 +103,7 @@ export function useGenerateCards() {
     abortRef.current?.abort();
   }, []);
 
-  return { generate, progress, isGenerating, error, cancel };
+  const revalidating = revalidator.state === "loading";
+
+  return { generate, progress, isGenerating: isGenerating || revalidating, error, cancel };
 }
