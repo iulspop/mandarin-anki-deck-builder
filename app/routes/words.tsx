@@ -214,7 +214,7 @@ export function HydrateFallback() {
   return (
     <div className="words-page">
       <header className="words-header">
-        <h1>Chinese Anki Deck Builder</h1>
+        <h1>Mandarin Anki Deck Builder</h1>
       </header>
     </div>
   );
@@ -310,7 +310,7 @@ export default function WordsRoute() {
     <div className="words-page">
       <header className="words-header">
         <div className="header-title-row">
-          <h1>Chinese Anki Deck Builder</h1>
+          <h1>Mandarin Anki Deck Builder</h1>
           <button type="button" className="version-toggle" onClick={handleVersionToggle}>
             HSK {version}
           </button>

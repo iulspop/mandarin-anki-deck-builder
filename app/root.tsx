@@ -11,7 +11,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "Chinese Anki Deck Builder — Flashcards from HSK Vocabulary" },
+  { title: "Mandarin Anki Deck Builder — Flashcards from HSK Vocabulary" },
   {
     name: "description",
     content:
