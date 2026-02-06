@@ -13,6 +13,11 @@ function getDb() {
   if (!db) {
     db = new Database(DB_PATH);
     db.pragma("journal_mode = WAL");
+    // Migrate: add traditional column if missing
+    const cols = db.prepare("PRAGMA table_info(words)").all() as Array<{ name: string }>;
+    if (!cols.some((c) => c.name === "traditional")) {
+      db.exec("ALTER TABLE words ADD COLUMN traditional TEXT");
+    }
   }
   return db;
 }
