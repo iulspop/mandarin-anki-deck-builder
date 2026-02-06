@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,7 +11,7 @@ import {
   type ColumnFiltersState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowUp, ArrowDown, ArrowUpDown, Settings2, Search, ChevronDown, Check, Filter, Pin, Share2 } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown, Settings2, Search, ChevronDown, Check, Filter, Pin, Share2, Volume2 } from "lucide-react";
 import { Popover } from "@base-ui/react/popover";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Checkbox } from "@base-ui/react/checkbox";
@@ -74,6 +74,39 @@ const columns = [
     },
     meta: { className: "col-level", gridWidth: "minmax(50px, 7%)" },
   }),
+  columnHelper.display({
+    id: "hskVersion",
+    header: "Version",
+    cell: ({ row }) => {
+      const { hskLevelV2, hskLevelV3 } = row.original;
+      const parts: string[] = [];
+      if (hskLevelV2 !== null) parts.push("2.0");
+      if (hskLevelV3 !== null) parts.push("3.0");
+      return parts.join(", ") || "—";
+    },
+    enableSorting: false,
+    meta: { className: "col-version", gridWidth: "minmax(60px, 7%)" },
+  }),
+  columnHelper.accessor("audio", {
+    id: "audio",
+    header: "Audio",
+    cell: ({ row, table }) => {
+      const audio = row.original.audio;
+      if (!audio) return "—";
+      return (
+        <button
+          type="button"
+          className="wl-audio-btn"
+          onClick={() => (table.options.meta as { playAudio: (src: string) => void }).playAudio(`/media/${audio}`)}
+          aria-label="Play audio"
+        >
+          <Volume2 size={14} />
+        </button>
+      );
+    },
+    enableSorting: false,
+    meta: { className: "col-audio", gridWidth: "minmax(65px, 6%)" },
+  }),
   columnHelper.accessor("frequency", {
     header: "Freq",
     cell: ({ getValue }) => {
@@ -98,6 +131,8 @@ const ROW_HEIGHT = 41;
 const TOGGLEABLE_COLUMNS: { id: string; label: string }[] = [
   { id: "hasIndex", label: "Deck" },
   { id: "hskLevel", label: "HSK" },
+  { id: "hskVersion", label: "Version" },
+  { id: "audio", label: "Audio" },
   { id: "frequency", label: "Freq" },
 ];
 
@@ -171,6 +206,19 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
   const [searchField, setSearchField] = useState<SearchField>(prefs.searchField ?? "all");
   const [pinTracked, setPinTracked] = useState(prefs.pinTracked ?? true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const playAudio = useCallback((src: string) => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (el.src.endsWith(src.split("/").pop()!) && !el.paused) {
+      el.pause();
+      el.currentTime = 0;
+      return;
+    }
+    el.src = src;
+    el.play();
+  }, []);
 
   const handleSortingChange = (updater: SortingState | ((old: SortingState) => SortingState)) => {
     setSorting((prev) => {
@@ -290,7 +338,7 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
         default: return matchChar || matchPinyin || w.meaning.toLowerCase().includes(q);
       }
     },
-    meta: { onToggle },
+    meta: { onToggle, playAudio },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -314,6 +362,7 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
 
   return (
     <>
+    <audio ref={audioRef} preload="none" />
     <div className="table-toolbar">
       <span className="table-row-count">{rows.length.toLocaleString()} words</span>
       <div className="toolbar-spacer" />

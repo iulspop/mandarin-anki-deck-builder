@@ -5,6 +5,8 @@ export interface HskWord {
   pinyin: string;
   meaning: string;
   hskLevel: number | null;
+  hskLevelV2: number | null;
+  hskLevelV3: number | null;
   frequency: number | null;
   source: string;
 }
@@ -30,6 +32,7 @@ export interface FrequencyStats {
 
 export interface HskWordWithDeck extends HskWord {
   hasIndex: boolean;
+  audio: string | null;
 }
 
 export interface WordIndexEntry {
@@ -49,6 +52,7 @@ export interface WordIndexEntry {
 export interface WordWithTracking extends HskWord {
   isTracked: boolean;
   hasIndex: boolean;
+  audio: string | null;
 }
 
 export interface CoveragePoint {

@@ -26,7 +26,7 @@ export function getAllWords(version: HskVersion = "3.0"): HskWord[] {
   const col = version === "2.0" ? "hsk_level_v2" : "hsk_level_v3";
   const rows = getDb()
     .prepare(
-      `SELECT simplified, pinyin, meaning, traditional, ${col} AS hsk_level, frequency, source
+      `SELECT simplified, pinyin, meaning, traditional, ${col} AS hsk_level, hsk_level_v2, hsk_level_v3, frequency, source
        FROM words
        WHERE hsk_level_v2 IS NOT NULL OR hsk_level_v3 IS NOT NULL OR source = 'custom'
        ORDER BY CASE WHEN source = 'custom' THEN 1 ELSE 0 END, ${col}, pinyin`
@@ -37,6 +37,8 @@ export function getAllWords(version: HskVersion = "3.0"): HskWord[] {
     meaning: string;
     traditional: string | null;
     hsk_level: number | null;
+    hsk_level_v2: number | null;
+    hsk_level_v3: number | null;
     frequency: number | null;
     source: string;
   }>;
@@ -48,6 +50,8 @@ export function getAllWords(version: HskVersion = "3.0"): HskWord[] {
     pinyin: r.pinyin,
     meaning: r.meaning,
     hskLevel: r.hsk_level,
+    hskLevelV2: r.hsk_level_v2,
+    hskLevelV3: r.hsk_level_v3,
     frequency: r.frequency,
     source: r.source,
   }));
@@ -65,10 +69,14 @@ export function getWords(level?: number | "custom", version: HskVersion = "3.0")
       ? allWords.filter((w) => w.hskLevel === level)
       : allWords;
 
-  return filtered.map((w) => ({
-    ...w,
-    hasIndex: w.id in wordIndex,
-  }));
+  return filtered.map((w) => {
+    const card = wordIndex[w.id];
+    return {
+      ...w,
+      hasIndex: !!card,
+      audio: card?.audio || null,
+    };
+  });
 }
 
 function clearCache() {

@@ -479,6 +479,32 @@ body {
   text-align: center;
 }
 
+.col-version {
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.col-audio {
+  text-align: center;
+}
+
+.wl-audio-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: #4a7c9b;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wl-audio-btn:hover {
+  color: #2d5f7e;
+  background: #e0f0ff;
+}
+
 .col-freq {
   text-align: right;
 }
