@@ -26,7 +26,7 @@ export function getAllWords(version: HskVersion = "3.0"): HskWord[] {
   const col = version === "2.0" ? "hsk_level_v2" : "hsk_level_v3";
   const rows = getDb()
     .prepare(
-      `SELECT simplified, pinyin, meaning, ${col} AS hsk_level, frequency, source
+      `SELECT simplified, pinyin, meaning, traditional, ${col} AS hsk_level, frequency, source
        FROM words
        WHERE hsk_level_v2 IS NOT NULL OR hsk_level_v3 IS NOT NULL OR source = 'custom'
        ORDER BY CASE WHEN source = 'custom' THEN 1 ELSE 0 END, ${col}, pinyin`
@@ -35,6 +35,7 @@ export function getAllWords(version: HskVersion = "3.0"): HskWord[] {
     simplified: string;
     pinyin: string;
     meaning: string;
+    traditional: string | null;
     hsk_level: number | null;
     frequency: number | null;
     source: string;
@@ -43,6 +44,7 @@ export function getAllWords(version: HskVersion = "3.0"): HskWord[] {
   const words: HskWord[] = rows.map((r) => ({
     id: r.simplified,
     character: r.simplified,
+    traditional: r.traditional,
     pinyin: r.pinyin,
     meaning: r.meaning,
     hskLevel: r.hsk_level,

@@ -17,6 +17,7 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import { Checkbox } from "@base-ui/react/checkbox";
 import { Select } from "@base-ui/react/select";
 import { Input } from "@base-ui/react/input";
+import uFuzzy from "@leeoniya/ufuzzy";
 import type { WordWithTracking } from "~/lib/types";
 import { TrackCell } from "./word-list-item";
 
@@ -102,6 +103,12 @@ const TOGGLEABLE_COLUMNS: { id: string; label: string }[] = [
 
 function stripDiacritics(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+const uf = new uFuzzy({ intraMode: 1, intraIns: 1 });
+
+function isChinese(s: string): boolean {
+  return /[\u4e00-\u9fff]/.test(s);
 }
 
 type SearchField = "all" | "character" | "pinyin" | "meaning" | "pinyin+character";
@@ -211,6 +218,26 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
     [sorting, pinTracked],
   );
 
+  // Build haystack for uFuzzy: one string per word combining searchable text
+  const haystack = useMemo(
+    () => words.map((w) => {
+      const pinyinNorm = stripDiacritics(w.pinyin.toLowerCase());
+      return `${w.character} ${w.traditional ?? ""} ${pinyinNorm} ${w.meaning.toLowerCase()}`;
+    }),
+    [words],
+  );
+
+  // Run uFuzzy once per query change, produce a Set of matching word indices
+  const fuzzyMatchSet = useMemo(() => {
+    const q = globalFilter.trim().toLowerCase();
+    if (!q || isChinese(q)) return null; // null = skip fuzzy, use substring
+    const idxs = uf.filter(haystack, q);
+    if (!idxs || idxs.length === 0) return new Set<number>();
+    const info = uf.info(idxs, haystack, q);
+    const order = uf.sort(info, haystack, q);
+    return new Set(order.map((i) => idxs[i]));
+  }, [haystack, globalFilter]);
+
   const table = useReactTable({
     data: words,
     columns,
@@ -229,21 +256,38 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
       const field = colonIdx !== -1 ? filterValue.slice(0, colonIdx) : "all";
       const q = (colonIdx !== -1 ? filterValue.slice(colonIdx + 1) : filterValue).toLowerCase();
       if (!q) return true;
+
       const w = row.original;
+
+      // Chinese queries: exact substring match (fuzzy doesn't help)
+      if (isChinese(q)) {
+        const matchChar = w.character.includes(q) || (w.traditional?.includes(q) ?? false);
+        switch (field) {
+          case "character": return matchChar;
+          case "meaning": return w.meaning.toLowerCase().includes(q);
+          case "pinyin": return false;
+          case "pinyin+character": return matchChar;
+          default: return matchChar || w.meaning.toLowerCase().includes(q);
+        }
+      }
+
+      // Latin queries: use uFuzzy set membership
+      if (fuzzyMatchSet !== null) {
+        return fuzzyMatchSet.has(row.index);
+      }
+
+      // Fallback substring match (shouldn't reach here, but safe)
       const pinyinLower = w.pinyin.toLowerCase();
       const pinyinNorm = stripDiacritics(pinyinLower);
       const pinyinNoSpaces = pinyinNorm.replace(/\s+/g, "");
       const matchPinyin = pinyinLower.includes(q) || pinyinNorm.includes(q) || pinyinNoSpaces.includes(q.replace(/\s+/g, ""));
+      const matchChar = w.character.includes(q) || (w.traditional?.includes(q) ?? false);
       switch (field) {
-        case "character": return w.character.includes(q);
+        case "character": return matchChar;
         case "pinyin": return matchPinyin;
-        case "pinyin+character": return matchPinyin || w.character.includes(q);
+        case "pinyin+character": return matchPinyin || matchChar;
         case "meaning": return w.meaning.toLowerCase().includes(q);
-        default: return (
-          w.character.includes(q) ||
-          matchPinyin ||
-          w.meaning.toLowerCase().includes(q)
-        );
+        default: return matchChar || matchPinyin || w.meaning.toLowerCase().includes(q);
       }
     },
     meta: { onToggle },

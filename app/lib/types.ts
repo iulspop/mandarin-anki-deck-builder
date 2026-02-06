@@ -1,6 +1,7 @@
 export interface HskWord {
   id: string;
   character: string;
+  traditional: string | null;
   pinyin: string;
   meaning: string;
   hskLevel: number | null;

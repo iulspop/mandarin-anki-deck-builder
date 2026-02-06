@@ -5,5 +5,8 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import devtoolsJson from 'vite-plugin-devtools-json';
 
 export default defineConfig({
+  define: {
+    __BUILD_HASH__: JSON.stringify(Date.now().toString(36)),
+  },
   plugins: [devtoolsJson(), tailwindcss(), reactRouter(), tsconfigPaths()],
 });

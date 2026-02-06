@@ -21,6 +21,7 @@ db.exec(`
     simplified TEXT PRIMARY KEY,
     pinyin TEXT NOT NULL,
     meaning TEXT NOT NULL,
+    traditional TEXT,
     hsk_level_v2 INTEGER,
     hsk_level_v3 INTEGER,
     frequency INTEGER,
@@ -43,6 +44,12 @@ db.exec(`
   );
 `);
 
+// --- Migrate: add traditional column if missing ---
+const cols = db.prepare("PRAGMA table_info(words)").all() as Array<{ name: string }>;
+if (!cols.some((c) => c.name === "traditional")) {
+  db.exec("ALTER TABLE words ADD COLUMN traditional TEXT");
+}
+
 // --- Sync words from complete.json ---
 
 const raw = JSON.parse(fs.readFileSync(COMPLETE_PATH, "utf-8")) as Array<{
@@ -51,14 +58,15 @@ const raw = JSON.parse(fs.readFileSync(COMPLETE_PATH, "utf-8")) as Array<{
   level: string[];
   pos?: string[];
   forms: Array<{
+    traditional?: string;
     transcriptions: { pinyin: string };
     meanings: string[];
   }>;
 }>;
 
 const upsertWord = db.prepare(`
-  INSERT OR REPLACE INTO words (simplified, pinyin, meaning, hsk_level_v2, hsk_level_v3, frequency, pos, source)
-  VALUES (@simplified, @pinyin, @meaning, @hsk_level_v2, @hsk_level_v3, @frequency, @pos, @source)
+  INSERT OR REPLACE INTO words (simplified, pinyin, meaning, traditional, hsk_level_v2, hsk_level_v3, frequency, pos, source)
+  VALUES (@simplified, @pinyin, @meaning, @traditional, @hsk_level_v2, @hsk_level_v3, @frequency, @pos, @source)
 `);
 
 const syncWords = db.transaction(() => {
@@ -75,6 +83,7 @@ const syncWords = db.transaction(() => {
       simplified: entry.simplified,
       pinyin: form.transcriptions.pinyin,
       meaning: form.meanings.join("; "),
+      traditional: form.traditional ?? null,
       hsk_level_v2: hskV2,
       hsk_level_v3: hskV3,
       frequency: entry.frequency,

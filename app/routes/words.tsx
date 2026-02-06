@@ -167,7 +167,21 @@ export async function clientLoader({ serverLoader, request }: Route.ClientLoader
     }
 
     const db = await openCacheDB();
-    const cachedAllWords = await idbGet<HskWordWithDeck[]>(db, `all-words-${version}`);
+    const cachedHash = await idbGet<string>(db, "cache-hash");
+    const hashValid = cachedHash === __BUILD_HASH__;
+
+    const cachedAllWords = hashValid
+      ? await idbGet<HskWordWithDeck[]>(db, `all-words-${version}`)
+      : undefined;
+
+    if (!hashValid) {
+      const tx = db.transaction("data", "readwrite");
+      tx.objectStore("data").clear();
+      await new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
 
     if (cachedAllWords) {
       const maxLevel = version === "2.0" ? 6 : 7;
@@ -191,7 +205,11 @@ export async function clientLoader({ serverLoader, request }: Route.ClientLoader
     }
 
     const serverData = await serverLoader();
-    idbPut(db, { [`all-words-${version}`]: serverData.allWords, [`word-index-${version}`]: serverData.wordIndex });
+    idbPut(db, {
+      [`all-words-${version}`]: serverData.allWords,
+      [`word-index-${version}`]: serverData.wordIndex,
+      "cache-hash": __BUILD_HASH__,
+    });
     return { ...serverData, trackedIds };
   } catch {
     // IndexedDB unavailable — fall back to server
