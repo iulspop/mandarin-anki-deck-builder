@@ -285,7 +285,7 @@ SD_ENGINE = "sd3.5-medium"
 def load_words():
     conn = get_db()
     rows = conn.execute(
-        "SELECT simplified, pinyin, meaning, hsk_level_v3 AS hsk_level FROM words WHERE hsk_level_v3 IS NOT NULL OR source = 'custom'"
+        "SELECT simplified, pinyin, meaning, COALESCE(hsk_level_v3, hsk_level_v2) AS hsk_level FROM words WHERE hsk_level_v2 IS NOT NULL OR hsk_level_v3 IS NOT NULL OR source = 'custom'"
     ).fetchall()
     conn.close()
 

@@ -661,6 +661,25 @@ body {
   stroke-width: 0.5;
 }
 
+.bar-tooltip {
+  pointer-events: none;
+  background: #1f2937;
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 10;
+  transform: translate(-50%, -100%);
+  margin-top: -6px;
+}
+
+.bar-tooltip-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
 .freq-legend {
   display: flex;
   gap: 1rem;

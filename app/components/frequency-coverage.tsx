@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FrequencyStats, CoverageCurveData } from "~/lib/types";
 
 type FreqView = "bars" | "coverage";
@@ -155,10 +155,32 @@ function BarChart({ stats, isHsk7 }: { stats: FrequencyStats; isHsk7?: boolean }
   const totalHeight = topMargin + chartHeight + bottomMargin;
   const yTicks = [0, Math.round(maxCount / 2), maxCount];
 
+  const [activeBar, setActiveBar] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  const handleBarInteraction = (i: number) => {
+    if (activeBar === i) {
+      setActiveBar(null);
+      return;
+    }
+    setActiveBar(i);
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const svgScale = rect.width / totalWidth;
+    const bucket = stats.buckets[i];
+    const barHeight = (bucket.hskCount / maxCount) * chartHeight;
+    const barTopInSvg = topMargin + (chartHeight - barHeight);
+    const barX = (leftMargin + i * 32 + 4 + 12) * svgScale + rect.left;
+    const barY = rect.top + barTopInSvg * svgScale;
+    setTooltipPos({ x: barX, y: barY });
+  };
+
   return (
     <>
-      <div className="freq-chart">
-        <svg viewBox={`0 0 ${totalWidth} ${totalHeight}`} className="freq-svg">
+      <div className="freq-chart" onMouseLeave={() => setActiveBar(null)}>
+        <svg ref={svgRef} viewBox={`0 0 ${totalWidth} ${totalHeight}`} className="freq-svg">
           <g transform={`translate(0, ${topMargin})`}>
             <text
               x={12}
@@ -188,7 +210,14 @@ function BarChart({ stats, isHsk7 }: { stats: FrequencyStats; isHsk7?: boolean }
               const x = leftMargin + i * 32 + 4;
               const barWidth = 24;
               return (
-                <g key={bucket.rangeLabel}>
+                <g
+                  key={bucket.rangeLabel}
+                  onMouseEnter={() => handleBarInteraction(i)}
+                  onClick={() => handleBarInteraction(i)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {/* Invisible hit area covering the full bar height */}
+                  <rect x={x} y={0} width={barWidth} height={chartHeight} fill="transparent" />
                   <rect x={x} y={chartHeight - hskHeight} width={barWidth} height={hskHeight} className="freq-bar-hsk" />
                   <rect x={x} y={chartHeight - trackedHeight} width={barWidth} height={trackedHeight} className="freq-bar-tracked" />
                   {i % 4 === 0 && (
@@ -205,6 +234,21 @@ function BarChart({ stats, isHsk7 }: { stats: FrequencyStats; isHsk7?: boolean }
             </text>
           </g>
         </svg>
+        {activeBar !== null && (() => {
+          const bucket = stats.buckets[activeBar];
+          const pctHsk = stats.totalWords > 0 ? ((bucket.hskCount / stats.totalWords) * 100).toFixed(1) : "0";
+          const pctTracked = bucket.hskCount > 0 ? ((bucket.trackedCount / bucket.hskCount) * 100).toFixed(1) : "0";
+          return (
+            <div
+              className="bar-tooltip"
+              style={{ left: tooltipPos.x, top: tooltipPos.y, position: "fixed" }}
+            >
+              <div className="bar-tooltip-title">Rank {bucket.rangeLabel}</div>
+              <div>{bucket.trackedCount} / {bucket.hskCount} tracked ({pctTracked}%)</div>
+              <div>{bucket.hskCount} / {stats.totalWords} total ({pctHsk}%)</div>
+            </div>
+          );
+        })()}
       </div>
       <div className="freq-legend">
         <span className="legend-item">
