@@ -81,7 +81,7 @@ export function loader({ request }: Route.LoaderArgs) {
 
   const allWords = getWords(undefined, version);
   const words = effectiveLevel === "custom"
-    ? allWords.filter((w) => w.hskLevel === null)
+    ? allWords.filter((w) => w.source === "custom")
     : effectiveLevel
       ? allWords.filter((w) => w.hskLevel === effectiveLevel)
       : allWords;
@@ -173,7 +173,7 @@ export async function clientLoader({ serverLoader, request }: Route.ClientLoader
       const maxLevel = version === "2.0" ? 6 : 7;
       const effectiveLevel = level === "custom" ? "custom" as const : (typeof level === "number" && level <= maxLevel ? level : undefined);
       const words = effectiveLevel === "custom"
-        ? cachedAllWords.filter((w) => w.hskLevel === null)
+        ? cachedAllWords.filter((w) => w.source === "custom")
         : effectiveLevel
           ? cachedAllWords.filter((w) => w.hskLevel === effectiveLevel)
           : cachedAllWords;
@@ -261,7 +261,7 @@ export default function WordsRoute() {
     }
   }, [trackedWords]);
 
-  const hasCustomWords = useMemo(() => allWords.some((w) => w.hskLevel === null), [allWords]);
+  const hasCustomWords = useMemo(() => allWords.some((w) => w.source === "custom"), [allWords]);
 
   const wordsWithTracking: WordWithTracking[] = useMemo(
     () => words.map((w) => ({ ...w, isTracked: trackedWords.has(w.id) })),

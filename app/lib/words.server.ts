@@ -28,7 +28,7 @@ export function getAllWords(version: HskVersion = "3.0"): HskWord[] {
     .prepare(
       `SELECT simplified, pinyin, meaning, ${col} AS hsk_level, frequency, source
        FROM words
-       WHERE ${col} IS NOT NULL OR source = 'custom'
+       WHERE hsk_level_v2 IS NOT NULL OR hsk_level_v3 IS NOT NULL OR source = 'custom'
        ORDER BY CASE WHEN source = 'custom' THEN 1 ELSE 0 END, ${col}, pinyin`
     )
     .all() as Array<{
@@ -47,6 +47,7 @@ export function getAllWords(version: HskVersion = "3.0"): HskWord[] {
     meaning: r.meaning,
     hskLevel: r.hsk_level,
     frequency: r.frequency,
+    source: r.source,
   }));
 
   cachedWords.set(version, words);
@@ -57,7 +58,7 @@ export function getWords(level?: number | "custom", version: HskVersion = "3.0")
   const allWords = getAllWords(version);
   const wordIndex = getWordIndex();
   const filtered = level === "custom"
-    ? allWords.filter((w) => w.hskLevel === null)
+    ? allWords.filter((w) => w.source === "custom")
     : level
       ? allWords.filter((w) => w.hskLevel === level)
       : allWords;

@@ -5,6 +5,7 @@ export interface HskWord {
   meaning: string;
   hskLevel: number | null;
   frequency: number | null;
+  source: string;
 }
 
 export interface FrequencyBucket {
