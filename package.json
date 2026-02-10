@@ -1,14 +1,4 @@
 {
-  "name": "learn-chinese",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc",
-    "build:index": "npx tsx scripts/build-word-index.ts"
-  },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
     "@leeoniya/ufuzzy": "^1.0.19",
@@ -24,16 +14,50 @@
     "react-router": "7.12.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.14",
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
+    "@faker-js/faker": "^10.3.0",
+    "@playwright/test": "^1.58.2",
     "@react-router/dev": "7.12.0",
     "@tailwindcss/vite": "^4.1.13",
+    "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "happy-dom": "^20.6.0",
+    "lefthook": "^2.1.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
     "vite-plugin-devtools-json": "^1.0.0",
-    "vite-tsconfig-paths": "^5.1.4"
-  }
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.18"
+  },
+  "name": "learn-chinese",
+  "packageManager": "pnpm@10.28.2",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "lefthook"
+    ]
+  },
+  "private": true,
+  "scripts": {
+    "build": "react-router build",
+    "build:index": "npx tsx scripts/build-word-index.ts",
+    "check": "biome check --write .",
+    "dev": "react-router dev",
+    "lint": "biome ci --css-parse-tailwind-directives=true .",
+    "prepare": "lefthook install",
+    "start": "react-router-serve ./build/server/index.js",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:watch": "vitest",
+    "typecheck": "react-router typegen && tsc"
+  },
+  "type": "module"
 }

@@ -1,5 +1,17 @@
 # Mandarin Anki Deck Builder
 
+## Skills
+
+Install all shared skills:
+```
+npx skills add --yes --agent claude-code iulspop/aidd-skills
+```
+
+Install a single skill:
+```
+npx skills add --yes --agent claude-code iulspop/aidd-skills/skills/<skill-name>
+```
+
 ## Architecture
 
 React Router framework mode app with a Python Flask companion server for AI-powered card generation and Anki export.
@@ -30,10 +42,15 @@ React Router framework mode app with a Python Flask companion server for AI-powe
 
 ## Commands
 
-- `npm run dev` — start dev server
-- `npm run build` — production build
+- `pnpm dev` — start dev server
+- `pnpm build` — production build
+- `pnpm check` — biome lint + format (auto-fix)
+- `pnpm lint` — biome CI check (no auto-fix)
+- `pnpm test` — run vitest
+- `pnpm test:watch` — vitest in watch mode
+- `pnpm test:e2e` — run playwright
+- `pnpm typecheck` — typecheck
 - `npx tsx scripts/sync-db.ts` — sync `complete.json` + `word-index.json` into SQLite
-- `npx react-router typegen && npx tsc --noEmit` — typecheck
 
 ## Key patterns
 

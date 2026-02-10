@@ -28,3 +28,8 @@ data/words.db
 data/words.db-shm
 data/words.db-wal
 data/media/
+
+# Testing
+/coverage/
+/playwright-report/
+/test-results/
