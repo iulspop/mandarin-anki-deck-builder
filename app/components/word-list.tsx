@@ -1,69 +1,96 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { Checkbox } from "@base-ui/react/checkbox";
+import { Input } from "@base-ui/react/input";
+import { Popover } from "@base-ui/react/popover";
+import { Select } from "@base-ui/react/select";
+import { Tooltip } from "@base-ui/react/tooltip";
+import uFuzzy from "@leeoniya/ufuzzy";
+import type {
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from "@tanstack/react-table";
 import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  flexRender,
   createColumnHelper,
-  type SortingState,
-  type VisibilityState,
-  type ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowUp, ArrowDown, ArrowUpDown, Settings2, Search, ChevronDown, Check, Filter, Pin, Share2, Volume2 } from "lucide-react";
-import { Popover } from "@base-ui/react/popover";
-import { Tooltip } from "@base-ui/react/tooltip";
-import { Checkbox } from "@base-ui/react/checkbox";
-import { Select } from "@base-ui/react/select";
-import { Input } from "@base-ui/react/input";
-import uFuzzy from "@leeoniya/ufuzzy";
-import type { WordWithTracking } from "~/lib/types";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Check,
+  ChevronDown,
+  Filter,
+  Pin,
+  Search,
+  Settings2,
+  Share2,
+  Volume2,
+} from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+
 import { TrackCell } from "./word-list-item";
+import type { WordWithTracking } from "~/lib/types";
 
 const columnHelper = createColumnHelper<WordWithTracking>();
 
 const columns = [
   columnHelper.accessor("isTracked", {
-    id: "track",
-    header: "Track",
-    cell: ({ row, table }) => <TrackCell word={row.original} onToggle={(table.options.meta as { onToggle: (id: string) => void }).onToggle} />,
+    cell: ({ row, table }) => (
+      <TrackCell
+        onToggle={
+          (table.options.meta as { onToggle: (id: string) => void }).onToggle
+        }
+        word={row.original}
+      />
+    ),
     enableSorting: true,
     filterFn: (row, _columnId, filterValue: string) => {
       if (filterValue === "all") return true;
-      return filterValue === "tracked" ? row.original.isTracked : !row.original.isTracked;
+      return filterValue === "tracked"
+        ? row.original.isTracked
+        : !row.original.isTracked;
     },
+    header: "Track",
+    id: "track",
     meta: { className: "col-track", gridWidth: "minmax(75px, 7%)" },
   }),
   columnHelper.accessor("character", {
-    header: "Character",
     enableSorting: false,
+    header: "Character",
     meta: { className: "col-character", gridWidth: "minmax(105px, 10%)" },
   }),
   columnHelper.accessor("pinyin", {
-    header: "Pinyin",
     enableSorting: false,
+    header: "Pinyin",
     meta: { className: "col-pinyin", gridWidth: "minmax(100px, 15%)" },
   }),
   columnHelper.accessor("meaning", {
-    header: "Meaning",
     enableSorting: false,
+    header: "Meaning",
     meta: { className: "col-meaning", gridWidth: "1fr" },
   }),
   columnHelper.accessor("hasIndex", {
-    id: "hasIndex",
-    header: "Deck",
     cell: ({ getValue }) => (getValue() ? "✓" : "—"),
     enableSorting: false,
     filterFn: (row, _columnId, filterValue: string) => {
       if (filterValue === "all") return true;
-      return filterValue === "has" ? row.original.hasIndex : !row.original.hasIndex;
+      return filterValue === "has"
+        ? row.original.hasIndex
+        : !row.original.hasIndex;
     },
+    header: "Deck",
+    id: "hasIndex",
     meta: { className: "col-deck", gridWidth: "minmax(50px, 6%)" },
   }),
   columnHelper.accessor("hskLevel", {
-    header: "HSK",
     cell: ({ getValue }) => getValue() ?? "—",
+    header: "HSK",
+    meta: { className: "col-level", gridWidth: "minmax(50px, 7%)" },
     sortingFn: (rowA, rowB) => {
       const a = rowA.original.hskLevel;
       const b = rowB.original.hskLevel;
@@ -72,11 +99,8 @@ const columns = [
       if (b === null) return -1;
       return a - b;
     },
-    meta: { className: "col-level", gridWidth: "minmax(50px, 7%)" },
   }),
   columnHelper.display({
-    id: "hskVersion",
-    header: "Version",
     cell: ({ row }) => {
       const { hskLevelV2, hskLevelV3 } = row.original;
       const parts: string[] = [];
@@ -85,35 +109,42 @@ const columns = [
       return parts.join(", ") || "—";
     },
     enableSorting: false,
+    header: "Version",
+    id: "hskVersion",
     meta: { className: "col-version", gridWidth: "minmax(60px, 7%)" },
   }),
   columnHelper.accessor("audio", {
-    id: "audio",
-    header: "Audio",
     cell: ({ row, table }) => {
       const audio = row.original.audio;
       if (!audio) return "—";
       return (
         <button
-          type="button"
-          className="wl-audio-btn"
-          onClick={() => (table.options.meta as { playAudio: (src: string) => void }).playAudio(`/media/${audio}`)}
           aria-label="Play audio"
+          className="wl-audio-btn"
+          onClick={() =>
+            (
+              table.options.meta as { playAudio: (src: string) => void }
+            ).playAudio(`/media/${audio}`)
+          }
+          type="button"
         >
           <Volume2 size={14} />
         </button>
       );
     },
     enableSorting: false,
+    header: "Audio",
+    id: "audio",
     meta: { className: "col-audio", gridWidth: "minmax(65px, 6%)" },
   }),
   columnHelper.accessor("frequency", {
-    header: "Freq",
     cell: ({ getValue }) => {
       const v = getValue();
       if (v === null) return "—";
       return v > 9999 ? "10k+" : v.toLocaleString();
     },
+    header: "Freq",
+    meta: { className: "col-freq", gridWidth: "minmax(55px, 7%)" },
     sortingFn: (rowA, rowB) => {
       const a = rowA.original.frequency;
       const b = rowB.original.frequency;
@@ -122,7 +153,6 @@ const columns = [
       if (b === null) return -1;
       return a - b;
     },
-    meta: { className: "col-freq", gridWidth: "minmax(55px, 7%)" },
   }),
 ];
 
@@ -140,13 +170,18 @@ function stripDiacritics(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-const uf = new uFuzzy({ intraMode: 1, intraIns: 1 });
+const uf = new uFuzzy({ intraIns: 1, intraMode: 1 });
 
 function isChinese(s: string): boolean {
   return /[\u4e00-\u9fff]/.test(s);
 }
 
-type SearchField = "all" | "character" | "pinyin" | "meaning" | "pinyin+character";
+type SearchField =
+  | "all"
+  | "character"
+  | "pinyin"
+  | "meaning"
+  | "pinyin+character";
 
 const COOKIE_OPTS = ";path=/;max-age=31536000;SameSite=Lax";
 
@@ -162,7 +197,11 @@ export interface WordListPrefs {
   pinTracked?: boolean;
 }
 
-function ShareLinkButton({ onShareList }: { onShareList: () => Promise<boolean> }) {
+function ShareLinkButton({
+  onShareList,
+}: {
+  onShareList: () => Promise<boolean>;
+}) {
   const [copied, setCopied] = useState(false);
   const handleClick = async () => {
     const success = await onShareList();
@@ -174,7 +213,14 @@ function ShareLinkButton({ onShareList }: { onShareList: () => Promise<boolean> 
     <Tooltip.Provider>
       <Tooltip.Root open={copied}>
         <Tooltip.Trigger
-          render={<button type="button" className="share-list-btn" onClick={handleClick} aria-label="Copy share link" />}
+          render={
+            <button
+              aria-label="Copy share link"
+              className="share-list-btn"
+              onClick={handleClick}
+              type="button"
+            />
+          }
         >
           <Share2 size={14} />
         </Tooltip.Trigger>
@@ -190,7 +236,13 @@ function ShareLinkButton({ onShareList }: { onShareList: () => Promise<boolean> 
   );
 }
 
-export function WordList({ words, prefs = {}, onToggle, onShareList, importButton }: {
+export function WordList({
+  words,
+  prefs = {},
+  onToggle,
+  onShareList,
+  importButton,
+}: {
   words: WordWithTracking[];
   prefs?: WordListPrefs;
   onToggle: (wordId: string) => void;
@@ -198,12 +250,23 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
   importButton?: React.ReactNode;
 }) {
   const [sorting, setSorting] = useState<SortingState>(
-    prefs.sorting ?? [{ id: "frequency", desc: false }],
+    prefs.sorting ?? [{ desc: false, id: "frequency" }],
   );
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(prefs.columnVisibility ?? { hasIndex: false, hskLevel: false, hskVersion: false, frequency: false });
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(prefs.columnFilters ?? []);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    prefs.columnVisibility ?? {
+      frequency: false,
+      hasIndex: false,
+      hskLevel: false,
+      hskVersion: false,
+    },
+  );
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
+    prefs.columnFilters ?? [],
+  );
   const [globalFilter, setGlobalFilter] = useState("");
-  const [searchField, setSearchField] = useState<SearchField>(prefs.searchField ?? "all");
+  const [searchField, setSearchField] = useState<SearchField>(
+    prefs.searchField ?? "all",
+  );
   const [pinTracked, setPinTracked] = useState(prefs.pinTracked ?? true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -211,7 +274,7 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
   const playAudio = useCallback((src: string) => {
     const el = audioRef.current;
     if (!el) return;
-    if (el.src.endsWith(src.split("/").pop()!) && !el.paused) {
+    if (el.src.endsWith(src.split("/").pop() ?? "") && !el.paused) {
       el.pause();
       el.currentTime = 0;
       return;
@@ -220,7 +283,9 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
     el.play();
   }, []);
 
-  const handleSortingChange = (updater: SortingState | ((old: SortingState) => SortingState)) => {
+  const handleSortingChange = (
+    updater: SortingState | ((old: SortingState) => SortingState),
+  ) => {
     setSorting((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       saveCookie("wl-sorting", next);
@@ -228,7 +293,9 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
     });
   };
 
-  const handleColumnVisibilityChange = (updater: VisibilityState | ((old: VisibilityState) => VisibilityState)) => {
+  const handleColumnVisibilityChange = (
+    updater: VisibilityState | ((old: VisibilityState) => VisibilityState),
+  ) => {
     setColumnVisibility((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       saveCookie("wl-col-visibility", next);
@@ -236,7 +303,11 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
     });
   };
 
-  const handleColumnFiltersChange = (updater: ColumnFiltersState | ((old: ColumnFiltersState) => ColumnFiltersState)) => {
+  const handleColumnFiltersChange = (
+    updater:
+      | ColumnFiltersState
+      | ((old: ColumnFiltersState) => ColumnFiltersState),
+  ) => {
     setColumnFilters((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       saveCookie("wl-col-filters", next);
@@ -260,18 +331,23 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
   };
 
   const effectiveSorting = useMemo(
-    () => pinTracked
-      ? [{ id: "track", desc: true }, ...sorting.filter((s) => s.id !== "track")]
-      : sorting.filter((s) => s.id !== "track"),
+    () =>
+      pinTracked
+        ? [
+            { desc: true, id: "track" },
+            ...sorting.filter((s) => s.id !== "track"),
+          ]
+        : sorting.filter((s) => s.id !== "track"),
     [sorting, pinTracked],
   );
 
   // Build haystack for uFuzzy: one string per word combining searchable text
   const haystack = useMemo(
-    () => words.map((w) => {
-      const pinyinNorm = stripDiacritics(w.pinyin.toLowerCase());
-      return `${w.character} ${w.traditional ?? ""} ${pinyinNorm} ${w.meaning.toLowerCase()}`;
-    }),
+    () =>
+      words.map((w) => {
+        const pinyinNorm = stripDiacritics(w.pinyin.toLowerCase());
+        return `${w.character} ${w.traditional ?? ""} ${pinyinNorm} ${w.meaning.toLowerCase()}`;
+      }),
     [words],
   );
 
@@ -287,35 +363,36 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
   }, [haystack, globalFilter]);
 
   const table = useReactTable({
-    data: words,
     columns,
-    state: { sorting: effectiveSorting, columnVisibility, columnFilters, globalFilter: `${searchField}:${globalFilter}` },
-    onSortingChange: handleSortingChange,
-    onColumnVisibilityChange: handleColumnVisibilityChange,
-    onColumnFiltersChange: handleColumnFiltersChange,
-    onGlobalFilterChange: (value: string) => {
-      const colonIdx = value.indexOf(":");
-      if (colonIdx !== -1) {
-        setGlobalFilter(value.slice(colonIdx + 1));
-      }
-    },
+    data: words,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     globalFilterFn: (row, _columnId, filterValue: string) => {
       const colonIdx = filterValue.indexOf(":");
       const field = colonIdx !== -1 ? filterValue.slice(0, colonIdx) : "all";
-      const q = (colonIdx !== -1 ? filterValue.slice(colonIdx + 1) : filterValue).toLowerCase();
+      const q = (
+        colonIdx !== -1 ? filterValue.slice(colonIdx + 1) : filterValue
+      ).toLowerCase();
       if (!q) return true;
 
       const w = row.original;
 
       // Chinese queries: exact substring match (fuzzy doesn't help)
       if (isChinese(q)) {
-        const matchChar = w.character.includes(q) || (w.traditional?.includes(q) ?? false);
+        const matchChar =
+          w.character.includes(q) || (w.traditional?.includes(q) ?? false);
         switch (field) {
-          case "character": return matchChar;
-          case "meaning": return w.meaning.toLowerCase().includes(q);
-          case "pinyin": return false;
-          case "pinyin+character": return matchChar;
-          default: return matchChar || w.meaning.toLowerCase().includes(q);
+          case "character":
+            return matchChar;
+          case "meaning":
+            return w.meaning.toLowerCase().includes(q);
+          case "pinyin":
+            return false;
+          case "pinyin+character":
+            return matchChar;
+          default:
+            return matchChar || w.meaning.toLowerCase().includes(q);
         }
       }
 
@@ -328,67 +405,168 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
       const pinyinLower = w.pinyin.toLowerCase();
       const pinyinNorm = stripDiacritics(pinyinLower);
       const pinyinNoSpaces = pinyinNorm.replace(/\s+/g, "");
-      const matchPinyin = pinyinLower.includes(q) || pinyinNorm.includes(q) || pinyinNoSpaces.includes(q.replace(/\s+/g, ""));
-      const matchChar = w.character.includes(q) || (w.traditional?.includes(q) ?? false);
+      const matchPinyin =
+        pinyinLower.includes(q) ||
+        pinyinNorm.includes(q) ||
+        pinyinNoSpaces.includes(q.replace(/\s+/g, ""));
+      const matchChar =
+        w.character.includes(q) || (w.traditional?.includes(q) ?? false);
       switch (field) {
-        case "character": return matchChar;
-        case "pinyin": return matchPinyin;
-        case "pinyin+character": return matchPinyin || matchChar;
-        case "meaning": return w.meaning.toLowerCase().includes(q);
-        default: return matchChar || matchPinyin || w.meaning.toLowerCase().includes(q);
+        case "character":
+          return matchChar;
+        case "pinyin":
+          return matchPinyin;
+        case "pinyin+character":
+          return matchPinyin || matchChar;
+        case "meaning":
+          return w.meaning.toLowerCase().includes(q);
+        default:
+          return (
+            matchChar || matchPinyin || w.meaning.toLowerCase().includes(q)
+          );
       }
     },
     meta: { onToggle, playAudio },
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    onColumnFiltersChange: handleColumnFiltersChange,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
+    onGlobalFilterChange: (value: string) => {
+      const colonIdx = value.indexOf(":");
+      if (colonIdx !== -1) {
+        setGlobalFilter(value.slice(colonIdx + 1));
+      }
+    },
+    onSortingChange: handleSortingChange,
+    state: {
+      columnFilters,
+      columnVisibility,
+      globalFilter: `${searchField}:${globalFilter}`,
+      sorting: effectiveSorting,
+    },
   });
 
   const { rows } = table.getRowModel();
 
   const gridTemplateColumns = table
     .getVisibleFlatColumns()
-    .map((col) => (col.columnDef.meta as { gridWidth?: string } | undefined)?.gridWidth ?? "1fr")
+    .map(
+      (col) =>
+        (col.columnDef.meta as { gridWidth?: string } | undefined)?.gridWidth ??
+        "1fr",
+    )
     .join(" ");
 
   const virtualizer = useVirtualizer({
     count: rows.length,
-    getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT,
-    overscan: 20,
     getItemKey: (index) => rows[index].id,
+    getScrollElement: () => scrollRef.current,
     measureElement: (el) => el.getBoundingClientRect().height,
+    overscan: 20,
   });
 
   return (
     <>
-    <audio ref={audioRef} preload="none" />
-    <div className="table-toolbar">
-      <span className="table-row-count">{rows.length.toLocaleString()} words</span>
-      <div className="toolbar-spacer" />
-      <div className="search-box">
-        <Search size={14} className="search-icon" />
+      <audio preload="none" ref={audioRef} />
+      <div className="table-toolbar">
+        <span className="table-row-count">
+          {rows.length.toLocaleString()} words
+        </span>
+        <div className="toolbar-spacer" />
+        <div className="search-box">
+          <Search className="search-icon" size={14} />
+          <Select.Root
+            onValueChange={handleSearchFieldChange}
+            value={searchField}
+          >
+            <Select.Trigger className="search-field-trigger">
+              <Select.Value />
+              <Select.Icon className="search-field-icon">
+                <ChevronDown size={12} />
+              </Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Positioner
+                align="start"
+                className="search-field-positioner"
+                side="bottom"
+                sideOffset={4}
+              >
+                <Select.Popup className="search-field-popup">
+                  {[
+                    { label: "All", value: "all" },
+                    { label: "Pinyin + Character", value: "pinyin+character" },
+                    { label: "Character", value: "character" },
+                    { label: "Pinyin", value: "pinyin" },
+                    { label: "Meaning", value: "meaning" },
+                  ].map((opt) => (
+                    <Select.Item
+                      className="search-field-item"
+                      key={opt.value}
+                      value={opt.value}
+                    >
+                      <Select.ItemIndicator className="search-field-indicator">
+                        <Check size={12} />
+                      </Select.ItemIndicator>
+                      <Select.ItemText>{opt.label}</Select.ItemText>
+                    </Select.Item>
+                  ))}
+                </Select.Popup>
+              </Select.Positioner>
+            </Select.Portal>
+          </Select.Root>
+          <Input
+            className="search-input"
+            onChange={(e) =>
+              setGlobalFilter((e.target as HTMLInputElement).value)
+            }
+            placeholder={
+              searchField === "all"
+                ? "Search words..."
+                : searchField === "pinyin+character"
+                  ? "Search pinyin or character..."
+                  : `Search ${searchField}...`
+            }
+            value={globalFilter}
+          />
+        </div>
         <Select.Root
-          value={searchField}
-          onValueChange={handleSearchFieldChange}
+          onValueChange={(val) => {
+            handleColumnFiltersChange((prev) => {
+              const next = prev.filter((f) => f.id !== "track");
+              if (val !== "all") next.push({ id: "track", value: val });
+              return next;
+            });
+          }}
+          value={
+            (columnFilters.find((f) => f.id === "track")?.value as string) ??
+            "all"
+          }
         >
-          <Select.Trigger className="search-field-trigger">
-            <Select.Value />
+          <Select.Trigger className="filter-pill">
+            <Filter size={12} />
+            <Select.Value placeholder="Tracked" />
             <Select.Icon className="search-field-icon">
               <ChevronDown size={12} />
             </Select.Icon>
           </Select.Trigger>
           <Select.Portal>
-            <Select.Positioner side="bottom" align="start" sideOffset={4} className="search-field-positioner">
+            <Select.Positioner
+              align="start"
+              className="search-field-positioner"
+              side="bottom"
+              sideOffset={4}
+            >
               <Select.Popup className="search-field-popup">
                 {[
-                  { value: "all", label: "All" },
-                  { value: "pinyin+character", label: "Pinyin + Character" },
-                  { value: "character", label: "Character" },
-                  { value: "pinyin", label: "Pinyin" },
-                  { value: "meaning", label: "Meaning" },
+                  { label: "All", value: "all" },
+                  { label: "Tracked", value: "tracked" },
+                  { label: "Untracked", value: "untracked" },
                 ].map((opt) => (
-                  <Select.Item key={opt.value} value={opt.value} className="search-field-item">
+                  <Select.Item
+                    className="search-field-item"
+                    key={opt.value}
+                    value={opt.value}
+                  >
                     <Select.ItemIndicator className="search-field-indicator">
                       <Check size={12} />
                     </Select.ItemIndicator>
@@ -399,220 +577,222 @@ export function WordList({ words, prefs = {}, onToggle, onShareList, importButto
             </Select.Positioner>
           </Select.Portal>
         </Select.Root>
-        <Input
-          className="search-input"
-          placeholder={searchField === "all" ? "Search words..." : searchField === "pinyin+character" ? "Search pinyin or character..." : `Search ${searchField}...`}
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter((e.target as HTMLInputElement).value)}
-        />
-      </div>
-      <Select.Root
-        value={(columnFilters.find((f) => f.id === "track")?.value as string) ?? "all"}
-        onValueChange={(val) => {
-          handleColumnFiltersChange((prev) => {
-            const next = prev.filter((f) => f.id !== "track");
-            if (val !== "all") next.push({ id: "track", value: val });
-            return next;
-          });
-        }}
-      >
-        <Select.Trigger className="filter-pill">
-          <Filter size={12} />
-          <Select.Value placeholder="Tracked" />
-          <Select.Icon className="search-field-icon">
-            <ChevronDown size={12} />
-          </Select.Icon>
-        </Select.Trigger>
-        <Select.Portal>
-          <Select.Positioner side="bottom" align="start" sideOffset={4} className="search-field-positioner">
-            <Select.Popup className="search-field-popup">
-              {[
-                { value: "all", label: "All" },
-                { value: "tracked", label: "Tracked" },
-                { value: "untracked", label: "Untracked" },
-              ].map((opt) => (
-                <Select.Item key={opt.value} value={opt.value} className="search-field-item">
-                  <Select.ItemIndicator className="search-field-indicator">
-                    <Check size={12} />
-                  </Select.ItemIndicator>
-                  <Select.ItemText>{opt.label}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.Popup>
-          </Select.Positioner>
-        </Select.Portal>
-      </Select.Root>
-      <Select.Root
-        value={(columnFilters.find((f) => f.id === "hasIndex")?.value as string) ?? "all"}
-        onValueChange={(val) => {
-          handleColumnFiltersChange((prev) => {
-            const next = prev.filter((f) => f.id !== "hasIndex");
-            if (val !== "all") next.push({ id: "hasIndex", value: val });
-            return next;
-          });
-        }}
-      >
-        <Select.Trigger className="filter-pill">
-          <Filter size={12} />
-          <Select.Value placeholder="Deck" />
-          <Select.Icon className="search-field-icon">
-            <ChevronDown size={12} />
-          </Select.Icon>
-        </Select.Trigger>
-        <Select.Portal>
-          <Select.Positioner side="bottom" align="start" sideOffset={4} className="search-field-positioner">
-            <Select.Popup className="search-field-popup">
-              {[
-                { value: "all", label: "All" },
-                { value: "has", label: "Has card" },
-                { value: "missing", label: "No card" },
-              ].map((opt) => (
-                <Select.Item key={opt.value} value={opt.value} className="search-field-item">
-                  <Select.ItemIndicator className="search-field-indicator">
-                    <Check size={12} />
-                  </Select.ItemIndicator>
-                  <Select.ItemText>{opt.label}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.Popup>
-          </Select.Positioner>
-        </Select.Portal>
-      </Select.Root>
-      <button
-        type="button"
-        className={`pin-tracked-btn ${pinTracked ? "active" : ""}`}
-        onClick={handlePinTrackedToggle}
-        title={pinTracked ? "Tracked words pinned to top" : "Pin tracked words to top"}
-      >
-        <Pin size={14} />
-      </button>
-      <Popover.Root>
-        <Popover.Trigger className="columns-pill">
-          <Settings2 size={14} />
-          Columns
-        </Popover.Trigger>
-        <Popover.Portal>
-          <Popover.Positioner side="bottom" align="center" sideOffset={4} className="columns-positioner">
-            <Popover.Popup className="columns-popup">
-              {TOGGLEABLE_COLUMNS.map((col) => {
-                const column = table.getColumn(col.id);
-                if (!column) return null;
-                return (
-                  <label key={col.id} className="columns-item">
-                    <Checkbox.Root
-                      className="columns-checkbox"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(checked) =>
-                        column.toggleVisibility(!!checked)
-                      }
-                    >
-                      <Checkbox.Indicator className="columns-checkbox-indicator">
-                        &#10003;
-                      </Checkbox.Indicator>
-                    </Checkbox.Root>
-                    {col.label}
-                  </label>
-                );
-              })}
-            </Popover.Popup>
-          </Popover.Positioner>
-        </Popover.Portal>
-      </Popover.Root>
-      {importButton}
-      {onShareList && (
-        <ShareLinkButton onShareList={onShareList} />
-      )}
-    </div>
-    <div className="word-list-container" ref={scrollRef}>
-      <div className="word-table" role="table">
-        <div className="word-table-header" role="rowgroup">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <div className="word-table-row" role="row" key={headerGroup.id} style={{ gridTemplateColumns }}>
-              {headerGroup.headers.map((header) => {
-                const meta = header.column.columnDef.meta as
-                  | { className?: string }
-                  | undefined;
-                return (
-                  <div
-                    key={header.id}
-                    role="columnheader"
-                    className={`word-table-th ${meta?.className ?? ""}`}
-                    onClick={header.column.id !== "track" ? header.column.getToggleSortingHandler() : undefined}
-                    style={
-                      header.column.getCanSort() && header.column.id !== "track"
-                        ? { cursor: "pointer", userSelect: "none" }
-                        : undefined
-                    }
-                  >
-                    <span className="th-content">
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      {header.column.getCanSort() && header.column.id !== "track" && (
-                        <span className="sort-indicator">
-                          {header.column.getIsSorted() === "asc" ? (
-                            <ArrowUp size={14} />
-                          ) : header.column.getIsSorted() === "desc" ? (
-                            <ArrowDown size={14} />
-                          ) : (
-                            <ArrowUpDown size={14} />
-                          )}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <div
-          className="word-table-body"
-          role="rowgroup"
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            position: "relative",
+        <Select.Root
+          onValueChange={(val) => {
+            handleColumnFiltersChange((prev) => {
+              const next = prev.filter((f) => f.id !== "hasIndex");
+              if (val !== "all") next.push({ id: "hasIndex", value: val });
+              return next;
+            });
           }}
+          value={
+            (columnFilters.find((f) => f.id === "hasIndex")?.value as string) ??
+            "all"
+          }
         >
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const row = rows[virtualRow.index];
-            const word = row.original;
-            return (
+          <Select.Trigger className="filter-pill">
+            <Filter size={12} />
+            <Select.Value placeholder="Deck" />
+            <Select.Icon className="search-field-icon">
+              <ChevronDown size={12} />
+            </Select.Icon>
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Positioner
+              align="start"
+              className="search-field-positioner"
+              side="bottom"
+              sideOffset={4}
+            >
+              <Select.Popup className="search-field-popup">
+                {[
+                  { label: "All", value: "all" },
+                  { label: "Has card", value: "has" },
+                  { label: "No card", value: "missing" },
+                ].map((opt) => (
+                  <Select.Item
+                    className="search-field-item"
+                    key={opt.value}
+                    value={opt.value}
+                  >
+                    <Select.ItemIndicator className="search-field-indicator">
+                      <Check size={12} />
+                    </Select.ItemIndicator>
+                    <Select.ItemText>{opt.label}</Select.ItemText>
+                  </Select.Item>
+                ))}
+              </Select.Popup>
+            </Select.Positioner>
+          </Select.Portal>
+        </Select.Root>
+        <button
+          className={`pin-tracked-btn ${pinTracked ? "active" : ""}`}
+          onClick={handlePinTrackedToggle}
+          title={
+            pinTracked
+              ? "Tracked words pinned to top"
+              : "Pin tracked words to top"
+          }
+          type="button"
+        >
+          <Pin size={14} />
+        </button>
+        <Popover.Root>
+          <Popover.Trigger className="columns-pill">
+            <Settings2 size={14} />
+            Columns
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Positioner
+              align="center"
+              className="columns-positioner"
+              side="bottom"
+              sideOffset={4}
+            >
+              <Popover.Popup className="columns-popup">
+                {TOGGLEABLE_COLUMNS.map((col) => {
+                  const column = table.getColumn(col.id);
+                  if (!column) return null;
+                  return (
+                    <label className="columns-item" key={col.id}>
+                      <Checkbox.Root
+                        checked={column.getIsVisible()}
+                        className="columns-checkbox"
+                        onCheckedChange={(checked) =>
+                          column.toggleVisibility(!!checked)
+                        }
+                      >
+                        <Checkbox.Indicator className="columns-checkbox-indicator">
+                          &#10003;
+                        </Checkbox.Indicator>
+                      </Checkbox.Root>
+                      {col.label}
+                    </label>
+                  );
+                })}
+              </Popover.Popup>
+            </Popover.Positioner>
+          </Popover.Portal>
+        </Popover.Root>
+        {importButton}
+        {onShareList && <ShareLinkButton onShareList={onShareList} />}
+      </div>
+      <div className="word-list-container" ref={scrollRef}>
+        <div className="word-table" role="table">
+          <div className="word-table-header" role="rowgroup">
+            {table.getHeaderGroups().map((headerGroup) => (
               <div
-                key={row.id}
+                className="word-table-row"
+                key={headerGroup.id}
                 role="row"
-                ref={virtualizer.measureElement}
-                data-index={virtualRow.index}
-                className={`word-table-row ${word.isTracked ? "tracked" : ""}`}
-                style={{
-                  gridTemplateColumns,
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
+                style={{ gridTemplateColumns }}
               >
-                {row.getVisibleCells().map((cell) => {
-                  const meta = cell.column.columnDef.meta as
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as
                     | { className?: string }
                     | undefined;
                   return (
-                    <div key={cell.id} role="cell" className={`word-table-td ${meta?.className ?? ""}`}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                    <div
+                      className={`word-table-th ${meta?.className ?? ""}`}
+                      key={header.id}
+                      onClick={
+                        header.column.id !== "track"
+                          ? header.column.getToggleSortingHandler()
+                          : undefined
+                      }
+                      onKeyDown={
+                        header.column.id !== "track"
+                          ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                header.column.getToggleSortingHandler()?.(e);
+                              }
+                            }
+                          : undefined
+                      }
+                      role="columnheader"
+                      style={
+                        header.column.getCanSort() &&
+                        header.column.id !== "track"
+                          ? { cursor: "pointer", userSelect: "none" }
+                          : undefined
+                      }
+                      tabIndex={header.column.id !== "track" ? 0 : undefined}
+                    >
+                      <span className="th-content">
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                        {header.column.getCanSort() &&
+                          header.column.id !== "track" && (
+                            <span className="sort-indicator">
+                              {header.column.getIsSorted() === "asc" ? (
+                                <ArrowUp size={14} />
+                              ) : header.column.getIsSorted() === "desc" ? (
+                                <ArrowDown size={14} />
+                              ) : (
+                                <ArrowUpDown size={14} />
+                              )}
+                            </span>
+                          )}
+                      </span>
                     </div>
                   );
                 })}
               </div>
-            );
-          })}
+            ))}
+          </div>
+          <div
+            className="word-table-body"
+            role="rowgroup"
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              position: "relative",
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const row = rows[virtualRow.index];
+              const word = row.original;
+              return (
+                <div
+                  className={`word-table-row ${word.isTracked ? "tracked" : ""}`}
+                  data-index={virtualRow.index}
+                  key={row.id}
+                  ref={virtualizer.measureElement}
+                  role="row"
+                  style={{
+                    gridTemplateColumns,
+                    left: 0,
+                    position: "absolute",
+                    top: 0,
+                    transform: `translateY(${virtualRow.start}px)`,
+                    width: "100%",
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const meta = cell.column.columnDef.meta as
+                      | { className?: string }
+                      | undefined;
+                    return (
+                      <div
+                        className={`word-table-td ${meta?.className ?? ""}`}
+                        key={cell.id}
+                        role="cell"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

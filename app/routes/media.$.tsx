@@ -1,17 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
+
 import type { Route } from "./+types/media.$";
 
 const MEDIA_DIR = path.join(process.cwd(), "data", "media");
 
 const MIME_TYPES: Record<string, string> = {
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
   ".gif": "image/gif",
-  ".webp": "image/webp",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
   ".mp3": "audio/mpeg",
   ".ogg": "audio/ogg",
+  ".png": "image/png",
+  ".webp": "image/webp",
 };
 
 export function loader({ params }: Route.LoaderArgs) {
@@ -33,8 +34,8 @@ export function loader({ params }: Route.LoaderArgs) {
 
   return new Response(fs.readFileSync(resolved), {
     headers: {
-      "Content-Type": contentType,
       "Cache-Control": "public, max-age=86400",
+      "Content-Type": contentType,
     },
   });
 }

@@ -18,12 +18,14 @@ interface WordIndexEntry {
 }
 
 // Load all HSK words (both versions)
-const completeData: CompleteWord[] = JSON.parse(fs.readFileSync(COMPLETE_PATH, "utf-8"));
+const completeData: CompleteWord[] = JSON.parse(
+  fs.readFileSync(COMPLETE_PATH, "utf-8"),
+);
 const hskWords = new Set(completeData.map((w) => w.simplified));
 
 // Load word index (merged deck cards)
 const wordIndex: Record<string, WordIndexEntry> = JSON.parse(
-  fs.readFileSync(WORD_INDEX_PATH, "utf-8")
+  fs.readFileSync(WORD_INDEX_PATH, "utf-8"),
 );
 
 // Find cards not in HSK list
@@ -43,9 +45,12 @@ if (unmatched.length > 0) {
   console.log("Character | Pinyin | Meaning | Source");
   console.log("----------|--------|---------|-------");
   for (const entry of unmatched) {
-    const meaning = entry.meaning.length > 60
-      ? entry.meaning.slice(0, 57) + "..."
-      : entry.meaning;
-    console.log(`${entry.simplified} | ${entry.pinyin} | ${meaning} | ${entry.source}`);
+    const meaning =
+      entry.meaning.length > 60
+        ? `${entry.meaning.slice(0, 57)}...`
+        : entry.meaning;
+    console.log(
+      `${entry.simplified} | ${entry.pinyin} | ${meaning} | ${entry.source}`,
+    );
   }
 }

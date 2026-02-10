@@ -9,7 +9,7 @@ const DB_PATH = path.join(DATA_DIR, "words.db");
 
 function parseLevel(levelStr: string, prefix: string): number | null {
   const match = levelStr.match(new RegExp(`^${prefix}-(\\d+)$`));
-  return match ? parseInt(match[1], 10) : null;
+  return match ? Number.parseInt(match[1], 10) : null;
 }
 
 const db = new Database(DB_PATH);
@@ -45,7 +45,9 @@ db.exec(`
 `);
 
 // --- Migrate: add traditional column if missing ---
-const cols = db.prepare("PRAGMA table_info(words)").all() as Array<{ name: string }>;
+const cols = db.prepare("PRAGMA table_info(words)").all() as Array<{
+  name: string;
+}>;
 if (!cols.some((c) => c.name === "traditional")) {
   db.exec("ALTER TABLE words ADD COLUMN traditional TEXT");
 }
@@ -74,21 +76,25 @@ const syncWords = db.transaction(() => {
     const form = entry.forms[0];
     if (!form) continue;
 
-    const hskV2 = entry.level.map((l) => parseLevel(l, "old")).find((l) => l !== null) ?? null;
-    const hskV3 = entry.level.map((l) => parseLevel(l, "new")).find((l) => l !== null) ?? null;
+    const hskV2 =
+      entry.level.map((l) => parseLevel(l, "old")).find((l) => l !== null) ??
+      null;
+    const hskV3 =
+      entry.level.map((l) => parseLevel(l, "new")).find((l) => l !== null) ??
+      null;
 
     if (hskV2 === null && hskV3 === null) continue;
 
     upsertWord.run({
-      simplified: entry.simplified,
-      pinyin: form.transcriptions.pinyin,
-      meaning: form.meanings.join("; "),
-      traditional: form.traditional ?? null,
+      frequency: entry.frequency,
       hsk_level_v2: hskV2,
       hsk_level_v3: hskV3,
-      frequency: entry.frequency,
+      meaning: form.meanings.join("; "),
+      pinyin: form.transcriptions.pinyin,
       pos: entry.pos ? entry.pos.join(",") : null,
+      simplified: entry.simplified,
       source: "hsk",
+      traditional: form.traditional ?? null,
     });
   }
 });
@@ -131,22 +137,22 @@ if (fs.existsSync(INDEX_PATH)) {
     for (const [key, card] of Object.entries(index)) {
       const simplified = card.simplified || key;
       ensureWord.run({
-        simplified,
-        pinyin: card.pinyin || "",
         meaning: card.meaning || "",
+        pinyin: card.pinyin || "",
+        simplified,
       });
       upsertCard.run({
-        simplified: card.simplified || key,
-        pinyin: card.pinyin || null,
+        audio: card.audio || null,
+        card_source: card.source || null,
         meaning: card.meaning || null,
         part_of_speech: card.partOfSpeech || null,
-        audio: card.audio || null,
+        pinyin: card.pinyin || null,
         sentence: card.sentence || null,
-        sentence_pinyin: card.sentencePinyin || null,
-        sentence_meaning: card.sentenceMeaning || null,
         sentence_audio: card.sentenceAudio || null,
         sentence_image: card.sentenceImage || null,
-        card_source: card.source || null,
+        sentence_meaning: card.sentenceMeaning || null,
+        sentence_pinyin: card.sentencePinyin || null,
+        simplified: card.simplified || key,
       });
     }
   });
@@ -157,8 +163,14 @@ if (fs.existsSync(INDEX_PATH)) {
   console.log("No word-index.json found, skipping word_cards sync");
 }
 
-const wordCount = (db.prepare("SELECT COUNT(*) AS count FROM words").get() as { count: number }).count;
-const cardCount = (db.prepare("SELECT COUNT(*) AS count FROM word_cards").get() as { count: number }).count;
+const wordCount = (
+  db.prepare("SELECT COUNT(*) AS count FROM words").get() as { count: number }
+).count;
+const cardCount = (
+  db.prepare("SELECT COUNT(*) AS count FROM word_cards").get() as {
+    count: number;
+  }
+).count;
 console.log(`Database: ${wordCount} words, ${cardCount} cards`);
 
 db.close();

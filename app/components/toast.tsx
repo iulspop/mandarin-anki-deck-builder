@@ -5,7 +5,11 @@ export type ToastData = {
   message: string;
 };
 
-export function Toast({ type, message, onDismiss }: ToastData & { onDismiss: () => void }) {
+export function Toast({
+  type,
+  message,
+  onDismiss,
+}: ToastData & { onDismiss: () => void }) {
   useEffect(() => {
     if (type === "success") {
       const timer = setTimeout(onDismiss, 4000);
@@ -22,7 +26,7 @@ export function Toast({ type, message, onDismiss }: ToastData & { onDismiss: () 
       </span>
       <span className="toast-message">{message}</span>
       {type !== "pending" && (
-        <button className="toast-close" onClick={onDismiss}>
+        <button className="toast-close" onClick={onDismiss} type="button">
           &times;
         </button>
       )}

@@ -43,7 +43,11 @@ interface DeckJson {
 }
 
 function loadRefold(): Map<string, WordEntry> {
-  const deckPath = path.join(DECKS_DIR, "Refold_Mandarin_1k_Simplified", "deck.json");
+  const deckPath = path.join(
+    DECKS_DIR,
+    "Refold_Mandarin_1k_Simplified",
+    "deck.json",
+  );
   if (!fs.existsSync(deckPath)) return new Map();
 
   const deck: DeckJson = JSON.parse(fs.readFileSync(deckPath, "utf-8"));
@@ -55,16 +59,16 @@ function loadRefold(): Map<string, WordEntry> {
     if (!simplified) continue;
 
     entries.set(simplified, {
-      simplified,
-      pinyin: f[3],
+      audio: extractSound(f[6]),
       meaning: f[4],
       partOfSpeech: f[5],
-      audio: extractSound(f[6]),
+      pinyin: f[3],
       sentence: stripHtml(f[7]),
-      sentencePinyin: stripHtml(f[9]),
-      sentenceMeaning: f[10],
       sentenceAudio: extractSound(f[11]),
       sentenceImage: extractImage(f[12]),
+      sentenceMeaning: f[10],
+      sentencePinyin: stripHtml(f[9]),
+      simplified,
       source: "refold",
     });
   }
@@ -86,16 +90,16 @@ function loadHsk1000_5000(): Map<string, WordEntry> {
     if (!simplified) continue;
 
     entries.set(simplified, {
-      simplified,
-      pinyin: f[3], // Pinyin.1 (tone marks)
+      audio: extractSound(f[7]),
       meaning: f[5],
       partOfSpeech: f[6],
-      audio: extractSound(f[7]),
+      pinyin: f[3], // Pinyin.1 (tone marks)
       sentence: stripHtml(f[10]),
-      sentencePinyin: stripHtml(f[14]), // SentencePinyin.1 (tone marks)
-      sentenceMeaning: f[16],
       sentenceAudio: extractSound(f[17]),
       sentenceImage: extractImage(f[18]),
+      sentenceMeaning: f[16],
+      sentencePinyin: stripHtml(f[14]), // SentencePinyin.1 (tone marks)
+      simplified,
       source: "hsk1000-5000",
     });
   }
@@ -108,8 +112,8 @@ function copyMedia(index: Map<string, WordEntry>) {
   fs.mkdirSync(OUTPUT_MEDIA, { recursive: true });
 
   const mediaDirs: Record<string, string> = {
-    refold: path.join(DECKS_DIR, "Refold_Mandarin_1k_Simplified", "media"),
     "hsk1000-5000": path.join(DECKS_DIR, "Mandarin_HSK_1000-5000", "media"),
+    refold: path.join(DECKS_DIR, "Refold_Mandarin_1k_Simplified", "media"),
   };
 
   let copied = 0;
@@ -119,7 +123,11 @@ function copyMedia(index: Map<string, WordEntry>) {
     const mediaDir = mediaDirs[entry.source];
     if (!mediaDir) continue;
 
-    for (const file of [entry.audio, entry.sentenceAudio, entry.sentenceImage]) {
+    for (const file of [
+      entry.audio,
+      entry.sentenceAudio,
+      entry.sentenceImage,
+    ]) {
       if (!file || seen.has(file)) continue;
       seen.add(file);
 
@@ -150,7 +158,7 @@ console.log(`Merged index: ${merged.size} words`);
 // Write JSON
 const obj: Record<string, WordEntry> = {};
 for (const [k, v] of merged) obj[k] = v;
-fs.writeFileSync(OUTPUT_JSON, JSON.stringify(obj, null, 2) + "\n");
+fs.writeFileSync(OUTPUT_JSON, `${JSON.stringify(obj, null, 2)}\n`);
 console.log(`Written to ${OUTPUT_JSON}`);
 
 // Copy media

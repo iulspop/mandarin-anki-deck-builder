@@ -1,8 +1,8 @@
-import type { HskWord, FrequencyStats, CoverageCurveData } from "./types";
+import type { CoverageCurveData, FrequencyStats, HskWord } from "./types";
 
 const BUCKET_SIZE = 500;
 const NUM_BUCKETS = 20;
-const R = 10000;
+const R = 10_000;
 
 function harmonicNumber(n: number): number {
   let sum = 0;
@@ -20,13 +20,15 @@ export function computeFrequencyStats(
   level?: number,
 ): FrequencyStats {
   const filtered =
-    level === 7 ? words.filter((w) => w.frequency !== null) : words.filter((w) => w.hskLevel !== null && w.hskLevel <= 6);
+    level === 7
+      ? words.filter((w) => w.frequency !== null)
+      : words.filter((w) => w.hskLevel !== null && w.hskLevel <= 6);
 
   const buckets = Array.from({ length: NUM_BUCKETS }, (_, i) => ({
-    rangeLabel: `${i * BUCKET_SIZE + 1}-${(i + 1) * BUCKET_SIZE}`,
-    min: i * BUCKET_SIZE + 1,
-    max: (i + 1) * BUCKET_SIZE,
     hskCount: 0,
+    max: (i + 1) * BUCKET_SIZE,
+    min: i * BUCKET_SIZE + 1,
+    rangeLabel: `${i * BUCKET_SIZE + 1}-${(i + 1) * BUCKET_SIZE}`,
     trackedCount: 0,
   }));
 
@@ -43,7 +45,7 @@ export function computeFrequencyStats(
       levelWords++;
       if (trackedSet.has(word.id)) levelTracked++;
     }
-    const freq = word.frequency!;
+    const freq = word.frequency as number;
     const bucketIndex = Math.min(
       Math.floor((freq - 1) / BUCKET_SIZE),
       NUM_BUCKETS - 1,
@@ -63,12 +65,12 @@ export function computeFrequencyStats(
 
   return {
     buckets,
-    totalWords: filtered.length,
-    totalTracked,
+    coveragePercent,
     topNTotal,
     topNTracked,
-    coveragePercent,
-    ...(level === 7 ? { levelWords, levelTracked } : {}),
+    totalTracked,
+    totalWords: filtered.length,
+    ...(level === 7 ? { levelTracked, levelWords } : {}),
   };
 }
 
@@ -83,14 +85,10 @@ function buildPrefixSums(ranks: number[]): {
     sum += 1 / sorted[i];
     prefix[i] = sum;
   }
-  return { sorted, prefix };
+  return { prefix, sorted };
 }
 
-function cumulativeAt(
-  sorted: number[],
-  prefix: number[],
-  n: number,
-): number {
+function cumulativeAt(sorted: number[], prefix: number[], n: number): number {
   if (n <= 0 || sorted.length === 0) return 0;
   let lo = 0,
     hi = sorted.length - 1,
@@ -144,11 +142,11 @@ export function computeCoverageCurve(
     const h79 = cumulativeAt(hsk79.sorted, hsk79.prefix, n);
     const ht = cumulativeAt(tracked.sorted, tracked.prefix, n);
     return {
-      rank: n,
-      zipfPercent,
       hsk16Percent: (h16 / H_R) * 100,
       hskAllPercent: ((h16 + h79) / H_R) * 100,
+      rank: n,
       trackedPercent: (ht / H_R) * 100,
+      zipfPercent,
     };
   });
 
@@ -157,9 +155,7 @@ export function computeCoverageCurve(
   const totalHsk79 =
     hsk79.prefix.length > 0 ? hsk79.prefix[hsk79.prefix.length - 1] : 0;
   const totalTracked =
-    tracked.prefix.length > 0
-      ? tracked.prefix[tracked.prefix.length - 1]
-      : 0;
+    tracked.prefix.length > 0 ? tracked.prefix[tracked.prefix.length - 1] : 0;
 
   return {
     points,

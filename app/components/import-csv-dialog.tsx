@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { Dialog } from "@base-ui/react/dialog";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { FileDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 
 interface ParsedWord {
   simplified: string;
@@ -12,11 +12,12 @@ interface ParsedWord {
 
 function parseCSV(text: string): { words: ParsedWord[]; error: string | null } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length === 0) return { words: [], error: "File is empty" };
+  if (lines.length === 0) return { error: "File is empty", words: [] };
 
   // Detect if first line is a header
   const firstLine = lines[0].toLowerCase();
-  const startIdx = firstLine.includes("character") || firstLine.includes("simplified") ? 1 : 0;
+  const startIdx =
+    firstLine.includes("character") || firstLine.includes("simplified") ? 1 : 0;
 
   const words: ParsedWord[] = [];
   const errors: string[] = [];
@@ -32,18 +33,33 @@ function parseCSV(text: string): { words: ParsedWord[]; error: string | null } {
       errors.push(`Row ${i + 1}: missing value`);
       continue;
     }
-    words.push({ simplified, pinyin, meaning: cols.slice(2).join(", ") });
+    words.push({ meaning: cols.slice(2).join(", "), pinyin, simplified });
   }
 
   if (words.length === 0) {
-    return { words: [], error: errors.length > 0 ? errors.join("\n") : "No valid rows found" };
+    return {
+      error: errors.length > 0 ? errors.join("\n") : "No valid rows found",
+      words: [],
+    };
   }
 
-  return { words, error: errors.length > 0 ? `${errors.length} row(s) skipped` : null };
+  return {
+    error: errors.length > 0 ? `${errors.length} row(s) skipped` : null,
+    words,
+  };
 }
 
-export function ImportCSVDialog({ onImported }: { onImported: (ids: string[], added: number) => void }) {
-  const fetcher = useFetcher<{ ok: boolean; ids?: string[]; added?: number; error?: string }>();
+export function ImportCSVDialog({
+  onImported,
+}: {
+  onImported: (ids: string[], added: number) => void;
+}) {
+  const fetcher = useFetcher<{
+    ok: boolean;
+    ids?: string[];
+    added?: number;
+    error?: string;
+  }>();
   const [open, setOpen] = useState(false);
   const [parsed, setParsed] = useState<ParsedWord[] | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -93,15 +109,20 @@ export function ImportCSVDialog({ onImported }: { onImported: (ids: string[], ad
     const formData = new FormData();
     formData.set("intent", "import-csv");
     formData.set("words", JSON.stringify(parsed));
-    fetcher.submit(formData, { method: "post", action: "/words" });
+    fetcher.submit(formData, { action: "/words", method: "post" });
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+    <Dialog.Root onOpenChange={handleOpenChange} open={open}>
       <Tooltip.Provider>
         <Tooltip.Root>
           <Tooltip.Trigger
-            render={<Dialog.Trigger className="import-csv-btn" aria-label="Import CSV" />}
+            render={
+              <Dialog.Trigger
+                aria-label="Import CSV"
+                className="import-csv-btn"
+              />
+            }
           >
             <FileDown size={14} />
           </Tooltip.Trigger>
@@ -117,27 +138,37 @@ export function ImportCSVDialog({ onImported }: { onImported: (ids: string[], ad
       <Dialog.Portal>
         <Dialog.Backdrop className="dialog-backdrop" />
         <Dialog.Popup className="dialog-popup import-csv-dialog">
-          <Dialog.Title className="dialog-title">Import Words from CSV</Dialog.Title>
+          <Dialog.Title className="dialog-title">
+            Import Words from CSV
+          </Dialog.Title>
           <p className="import-csv-hint">
             CSV should have columns: <code>Character, Pinyin, Meaning</code>
           </p>
           <input
+            accept=".csv,text/csv"
+            className="import-csv-file-hidden"
+            onChange={handleFileChange}
             ref={fileRef}
             type="file"
-            accept=".csv,text/csv"
-            onChange={handleFileChange}
-            className="import-csv-file-hidden"
           />
           <div className="import-csv-file-row">
-            <button type="button" className="import-csv-choose-btn" onClick={() => fileRef.current?.click()}>
+            <button
+              className="import-csv-choose-btn"
+              onClick={() => fileRef.current?.click()}
+              type="button"
+            >
               Choose File
             </button>
-            <span className="import-csv-file-name">{fileName ?? "No file chosen"}</span>
+            <span className="import-csv-file-name">
+              {fileName ?? "No file chosen"}
+            </span>
           </div>
           {parseError && <p className="import-csv-warning">{parseError}</p>}
           {parsed && parsed.length > 0 && (
             <div className="import-csv-preview">
-              <p className="import-csv-count">{parsed.length} word(s) ready to import</p>
+              <p className="import-csv-count">
+                {parsed.length} word(s) ready to import
+              </p>
               <div className="import-csv-table">
                 <div className="import-csv-table-header">
                   <span>Character</span>
@@ -145,15 +176,17 @@ export function ImportCSVDialog({ onImported }: { onImported: (ids: string[], ad
                   <span>Meaning</span>
                 </div>
                 <div className="import-csv-table-body">
-                  {parsed.slice(0, 50).map((w, i) => (
-                    <div key={i} className="import-csv-table-row">
+                  {parsed.slice(0, 50).map((w) => (
+                    <div className="import-csv-table-row" key={w.simplified}>
                       <span>{w.simplified}</span>
                       <span>{w.pinyin}</span>
                       <span>{w.meaning}</span>
                     </div>
                   ))}
                   {parsed.length > 50 && (
-                    <p className="import-csv-truncated">...and {parsed.length - 50} more</p>
+                    <p className="import-csv-truncated">
+                      ...and {parsed.length - 50} more
+                    </p>
                   )}
                 </div>
               </div>
@@ -163,10 +196,10 @@ export function ImportCSVDialog({ onImported }: { onImported: (ids: string[], ad
           <div className="add-word-actions">
             <Dialog.Close className="add-word-cancel">Cancel</Dialog.Close>
             <button
-              type="button"
               className="add-word-submit"
               disabled={isSubmitting || !parsed || parsed.length === 0}
               onClick={handleSubmit}
+              type="button"
             >
               {isSubmitting ? "Importing..." : "Import"}
             </button>

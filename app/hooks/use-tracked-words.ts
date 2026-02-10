@@ -45,7 +45,11 @@ function subscribe(listener: () => void): () => void {
 }
 
 export function useTrackedWords() {
-  const trackedWords = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const trackedWords = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   const toggleWord = useCallback((id: string) => {
     const current = getSnapshot();
@@ -69,5 +73,5 @@ export function useTrackedWords() {
     save(next);
   }, []);
 
-  return { trackedWords, toggleWord, trackAll, untrackAll };
+  return { toggleWord, trackAll, trackedWords, untrackAll };
 }

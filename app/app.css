@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 html,
@@ -91,14 +92,15 @@ body {
   color: #6b7280;
   cursor: pointer;
   font-family: inherit;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .version-toggle:hover {
   color: #111827;
   border-color: #9ca3af;
 }
-
 
 .tracked-badge {
   background: #e0f2fe;
@@ -160,7 +162,9 @@ body {
   font-weight: 500;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .level-tab:hover {
@@ -600,7 +604,9 @@ body {
   font-weight: 500;
   color: #6b7280;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .freq-view-btn:first-child {
@@ -1093,7 +1099,7 @@ body {
   content: var(--pinyin);
   position: absolute;
   font-size: 22px;
-  color: #55DD55;
+  color: #55dd55;
   padding-left: 10px;
   padding-right: 10px;
   padding-bottom: 5px;
@@ -1129,7 +1135,7 @@ body {
 .rc-pinyin {
   font-family: Palatino, Georgia, serif;
   font-size: 22px;
-  color: #55DD55;
+  color: #55dd55;
 }
 
 .rc-english {
@@ -1151,7 +1157,7 @@ body {
 .rc-pinyin-sen {
   font-family: Palatino, Georgia, serif;
   font-size: 20px;
-  color: #55DD55;
+  color: #55dd55;
 }
 
 .rc-meaning-sen {
@@ -1569,7 +1575,6 @@ body {
   white-space: nowrap;
   pointer-events: none;
 }
-
 
 /* Export page generate buttons */
 .generate-single-btn {

@@ -22,7 +22,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!.react-router"]
+    "includes": ["**", "!.react-router", "!data/complete.json"]
   },
   "formatter": {
     "enabled": true,
@@ -36,6 +36,14 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "a11y": {
+        "noLabelWithoutControl": "off",
+        "noStaticElementInteractions": "off",
+        "noSvgWithoutTitle": "off",
+        "useFocusableInteractive": "off",
+        "useMediaCaption": "off",
+        "useSemanticElements": "off"
+      },
       "correctness": {
         "noReactPropAssignments": "error",
         "useHookAtTopLevel": "error",
@@ -58,6 +66,7 @@
         "useTrimStartEnd": "error"
       },
       "suspicious": {
+        "noDocumentCookie": "off",
         "noDuplicateTestHooks": "error",
         "noFocusedTests": "error",
         "noGlobalIsFinite": "off",

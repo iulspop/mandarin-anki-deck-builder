@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import type { FrequencyStats, CoverageCurveData } from "~/lib/types";
+
+import type { CoverageCurveData, FrequencyStats } from "~/lib/types";
 
 type FreqView = "bars" | "coverage";
 
@@ -17,40 +18,55 @@ function CoverageCurveChart({ data }: { data: CoverageCurveData }) {
   const totalWidth = leftMargin + chartWidth + rightMargin;
   const totalHeight = topMargin + chartHeight + bottomMargin;
 
-  const maxRank = 10000;
+  const maxRank = 10_000;
   const xScale = (rank: number) => leftMargin + (rank / maxRank) * chartWidth;
-  const yScale = (pct: number) => topMargin + chartHeight - (pct / 100) * chartHeight;
+  const yScale = (pct: number) =>
+    topMargin + chartHeight - (pct / 100) * chartHeight;
 
   const yTicks = [0, 25, 50, 75, 100];
-  const xTicks = [0, 2000, 4000, 6000, 8000, 10000];
+  const xTicks = [0, 2000, 4000, 6000, 8000, 10_000];
 
-  type PointKey = "zipfPercent" | "hsk16Percent" | "hskAllPercent" | "trackedPercent";
+  type PointKey =
+    | "zipfPercent"
+    | "hsk16Percent"
+    | "hskAllPercent"
+    | "trackedPercent";
 
   function areaPath(key: PointKey) {
     const pts = data.points;
     if (pts.length === 0) return "";
-    const segments = pts.map((p) => `L${xScale(p.rank)},${yScale(p[key])}`).join("");
+    const segments = pts
+      .map((p) => `L${xScale(p.rank)},${yScale(p[key])}`)
+      .join("");
     return `M${xScale(pts[0].rank)},${yScale(0)}${segments}L${xScale(pts[pts.length - 1].rank)},${yScale(0)}Z`;
   }
 
   function linePath(key: PointKey) {
     const pts = data.points;
     if (pts.length === 0) return "";
-    return pts.map((p, i) => `${i === 0 ? "M" : "L"}${xScale(p.rank)},${yScale(p[key])}`).join("");
+    return pts
+      .map(
+        (p, i) => `${i === 0 ? "M" : "L"}${xScale(p.rank)},${yScale(p[key])}`,
+      )
+      .join("");
   }
 
   return (
     <>
       <div className="freq-chart">
-        <svg viewBox={`0 0 ${totalWidth} ${totalHeight}`} className="freq-svg coverage-svg">
+        <svg
+          aria-label="Frequency coverage curve chart"
+          className="freq-svg coverage-svg"
+          viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+        >
           <g>
             {/* Y-axis label */}
             <text
-              x={14}
-              y={topMargin + chartHeight / 2}
+              className="freq-axis-label"
               textAnchor="middle"
               transform={`rotate(-90, 14, ${topMargin + chartHeight / 2})`}
-              className="freq-axis-label"
+              x={14}
+              y={topMargin + chartHeight / 2}
             >
               Text coverage
             </text>
@@ -59,19 +75,19 @@ function CoverageCurveChart({ data }: { data: CoverageCurveData }) {
             {yTicks.map((tick) => (
               <g key={tick}>
                 <text
+                  className="freq-label"
+                  textAnchor="end"
                   x={leftMargin - 6}
                   y={yScale(tick) + 3}
-                  textAnchor="end"
-                  className="freq-label"
                 >
                   {tick}%
                 </text>
                 <line
-                  x1={leftMargin}
-                  y1={yScale(tick)}
-                  x2={leftMargin + chartWidth}
-                  y2={yScale(tick)}
                   className="freq-gridline"
+                  x1={leftMargin}
+                  x2={leftMargin + chartWidth}
+                  y1={yScale(tick)}
+                  y2={yScale(tick)}
                 />
               </g>
             ))}
@@ -80,46 +96,52 @@ function CoverageCurveChart({ data }: { data: CoverageCurveData }) {
             {xTicks.map((tick) => (
               <g key={tick}>
                 <text
+                  className="freq-label"
+                  textAnchor="middle"
                   x={xScale(tick)}
                   y={topMargin + chartHeight + 16}
-                  textAnchor="middle"
-                  className="freq-label"
                 >
                   {tick === 0 ? "0" : `${tick / 1000}k`}
                 </text>
                 {tick > 0 && (
                   <line
-                    x1={xScale(tick)}
-                    y1={topMargin}
-                    x2={xScale(tick)}
-                    y2={topMargin + chartHeight}
                     className="freq-gridline"
+                    x1={xScale(tick)}
+                    x2={xScale(tick)}
+                    y1={topMargin}
+                    y2={topMargin + chartHeight}
                   />
                 )}
               </g>
             ))}
 
             {/* Zipf theoretical curve - dashed line */}
-            <path d={linePath("zipfPercent")} className="curve-zipf-line" />
+            <path className="curve-zipf-line" d={linePath("zipfPercent")} />
 
             {/* HSK 7-9 area (total HSK minus 1-6, rendered first so 1-6 paints on top) */}
-            <path d={areaPath("hskAllPercent")} className="curve-hsk79-area" />
-            <path d={linePath("hskAllPercent")} className="curve-hsk79-line" />
+            <path className="curve-hsk79-area" d={areaPath("hskAllPercent")} />
+            <path className="curve-hsk79-line" d={linePath("hskAllPercent")} />
 
             {/* HSK 1-6 area */}
-            <path d={areaPath("hsk16Percent")} className="curve-hsk16-area" />
-            <path d={linePath("hsk16Percent")} className="curve-hsk16-line" />
+            <path className="curve-hsk16-area" d={areaPath("hsk16Percent")} />
+            <path className="curve-hsk16-line" d={linePath("hsk16Percent")} />
 
             {/* Tracked area fill */}
-            <path d={areaPath("trackedPercent")} className="curve-tracked-area" />
-            <path d={linePath("trackedPercent")} className="curve-tracked-line" />
+            <path
+              className="curve-tracked-area"
+              d={areaPath("trackedPercent")}
+            />
+            <path
+              className="curve-tracked-line"
+              d={linePath("trackedPercent")}
+            />
 
             {/* X-axis label */}
             <text
+              className="freq-axis-label"
+              textAnchor="middle"
               x={leftMargin + chartWidth / 2}
               y={topMargin + chartHeight + 38}
-              textAnchor="middle"
-              className="freq-axis-label"
             >
               Word frequency rank (1 = most common)
             </text>
@@ -144,7 +166,7 @@ function CoverageCurveChart({ data }: { data: CoverageCurveData }) {
   );
 }
 
-function BarChart({ stats, isHsk7 }: { stats: FrequencyStats; isHsk7?: boolean }) {
+function BarChart({ stats }: { stats: FrequencyStats }) {
   const maxCount = Math.max(...stats.buckets.map((b) => b.hskCount), 1);
   const chartHeight = 160;
   const topMargin = 14;
@@ -179,15 +201,24 @@ function BarChart({ stats, isHsk7 }: { stats: FrequencyStats; isHsk7?: boolean }
 
   return (
     <>
-      <div className="freq-chart" onMouseLeave={() => setActiveBar(null)}>
-        <svg ref={svgRef} viewBox={`0 0 ${totalWidth} ${totalHeight}`} className="freq-svg">
+      <div
+        className="freq-chart"
+        onMouseLeave={() => setActiveBar(null)}
+        role="group"
+      >
+        <svg
+          aria-label="Frequency distribution bar chart"
+          className="freq-svg"
+          ref={svgRef}
+          viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+        >
           <g transform={`translate(0, ${topMargin})`}>
             <text
-              x={12}
-              y={chartHeight / 2}
+              className="freq-axis-label"
               textAnchor="middle"
               transform={`rotate(-90, 12, ${chartHeight / 2})`}
-              className="freq-axis-label"
+              x={12}
+              y={chartHeight / 2}
             >
               # of words
             </text>
@@ -196,32 +227,67 @@ function BarChart({ stats, isHsk7 }: { stats: FrequencyStats; isHsk7?: boolean }
               const y = chartHeight - (tick / maxCount) * chartHeight;
               return (
                 <g key={tick}>
-                  <text x={leftMargin - 6} y={y + 3} textAnchor="end" className="freq-label">
+                  <text
+                    className="freq-label"
+                    textAnchor="end"
+                    x={leftMargin - 6}
+                    y={y + 3}
+                  >
                     {tick}
                   </text>
-                  <line x1={leftMargin} y1={y} x2={totalWidth} y2={y} className="freq-gridline" />
+                  <line
+                    className="freq-gridline"
+                    x1={leftMargin}
+                    x2={totalWidth}
+                    y1={y}
+                    y2={y}
+                  />
                 </g>
               );
             })}
 
             {stats.buckets.map((bucket, i) => {
               const hskHeight = (bucket.hskCount / maxCount) * chartHeight;
-              const trackedHeight = (bucket.trackedCount / maxCount) * chartHeight;
+              const trackedHeight =
+                (bucket.trackedCount / maxCount) * chartHeight;
               const x = leftMargin + i * 32 + 4;
               const barWidth = 24;
               return (
                 <g
                   key={bucket.rangeLabel}
-                  onMouseEnter={() => handleBarInteraction(i)}
                   onClick={() => handleBarInteraction(i)}
+                  onMouseEnter={() => handleBarInteraction(i)}
                   style={{ cursor: "pointer" }}
                 >
                   {/* Invisible hit area covering the full bar height */}
-                  <rect x={x} y={0} width={barWidth} height={chartHeight} fill="transparent" />
-                  <rect x={x} y={chartHeight - hskHeight} width={barWidth} height={hskHeight} className="freq-bar-hsk" />
-                  <rect x={x} y={chartHeight - trackedHeight} width={barWidth} height={trackedHeight} className="freq-bar-tracked" />
+                  <rect
+                    fill="transparent"
+                    height={chartHeight}
+                    width={barWidth}
+                    x={x}
+                    y={0}
+                  />
+                  <rect
+                    className="freq-bar-hsk"
+                    height={hskHeight}
+                    width={barWidth}
+                    x={x}
+                    y={chartHeight - hskHeight}
+                  />
+                  <rect
+                    className="freq-bar-tracked"
+                    height={trackedHeight}
+                    width={barWidth}
+                    x={x}
+                    y={chartHeight - trackedHeight}
+                  />
                   {i % 4 === 0 && (
-                    <text x={x + barWidth / 2} y={chartHeight + 16} textAnchor="middle" className="freq-label">
+                    <text
+                      className="freq-label"
+                      textAnchor="middle"
+                      x={x + barWidth / 2}
+                      y={chartHeight + 16}
+                    >
                       {bucket.min}
                     </text>
                   )}
@@ -229,26 +295,49 @@ function BarChart({ stats, isHsk7 }: { stats: FrequencyStats; isHsk7?: boolean }
               );
             })}
 
-            <text x={leftMargin + chartWidth / 2} y={chartHeight + 34} textAnchor="middle" className="freq-axis-label">
+            <text
+              className="freq-axis-label"
+              textAnchor="middle"
+              x={leftMargin + chartWidth / 2}
+              y={chartHeight + 34}
+            >
               Word frequency rank (1 = most common)
             </text>
           </g>
         </svg>
-        {activeBar !== null && (() => {
-          const bucket = stats.buckets[activeBar];
-          const pctHsk = stats.totalWords > 0 ? ((bucket.hskCount / stats.totalWords) * 100).toFixed(1) : "0";
-          const pctTracked = bucket.hskCount > 0 ? ((bucket.trackedCount / bucket.hskCount) * 100).toFixed(1) : "0";
-          return (
-            <div
-              className="bar-tooltip"
-              style={{ left: tooltipPos.x, top: tooltipPos.y, position: "fixed" }}
-            >
-              <div className="bar-tooltip-title">Rank {bucket.rangeLabel}</div>
-              <div>{bucket.trackedCount} / {bucket.hskCount} tracked ({pctTracked}%)</div>
-              <div>{bucket.hskCount} / {stats.totalWords} total ({pctHsk}%)</div>
-            </div>
-          );
-        })()}
+        {activeBar !== null &&
+          (() => {
+            const bucket = stats.buckets[activeBar];
+            const pctHsk =
+              stats.totalWords > 0
+                ? ((bucket.hskCount / stats.totalWords) * 100).toFixed(1)
+                : "0";
+            const pctTracked =
+              bucket.hskCount > 0
+                ? ((bucket.trackedCount / bucket.hskCount) * 100).toFixed(1)
+                : "0";
+            return (
+              <div
+                className="bar-tooltip"
+                style={{
+                  left: tooltipPos.x,
+                  position: "fixed",
+                  top: tooltipPos.y,
+                }}
+              >
+                <div className="bar-tooltip-title">
+                  Rank {bucket.rangeLabel}
+                </div>
+                <div>
+                  {bucket.trackedCount} / {bucket.hskCount} tracked (
+                  {pctTracked}%)
+                </div>
+                <div>
+                  {bucket.hskCount} / {stats.totalWords} total ({pctHsk}%)
+                </div>
+              </div>
+            );
+          })()}
       </div>
       <div className="freq-legend">
         <span className="legend-item">
@@ -287,13 +376,15 @@ export function FrequencyCoverage({
         <div className="freq-header-right">
           {view === "coverage" ? (
             <span className="freq-summary">
-              Your tracked words cover ~{coverageCurve.totalTrackedPercent}% of typical Chinese text
+              Your tracked words cover ~{coverageCurve.totalTrackedPercent}% of
+              typical Chinese text
             </span>
           ) : (
             <span className="freq-summary">
               {isHsk7 ? (
                 <>
-                  {stats.totalTracked} / {stats.totalWords} total HSK words tracked
+                  {stats.totalTracked} / {stats.totalWords} total HSK words
+                  tracked
                 </>
               ) : (
                 <>
@@ -306,12 +397,14 @@ export function FrequencyCoverage({
             <button
               className={`freq-view-btn ${view === "bars" ? "active" : ""}`}
               onClick={() => handleViewChange("bars")}
+              type="button"
             >
               Word Count
             </button>
             <button
               className={`freq-view-btn ${view === "coverage" ? "active" : ""}`}
               onClick={() => handleViewChange("coverage")}
+              type="button"
             >
               Text Coverage
             </button>
@@ -320,7 +413,7 @@ export function FrequencyCoverage({
       </div>
 
       {view === "bars" ? (
-        <BarChart stats={stats} isHsk7={isHsk7} />
+        <BarChart stats={stats} />
       ) : (
         <CoverageCurveChart data={coverageCurve} />
       )}
